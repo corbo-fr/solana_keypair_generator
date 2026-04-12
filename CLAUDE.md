@@ -16,6 +16,15 @@ The user provides their own **RPC URL** in the frontend interface, which is used
 ## Stack
 
 - **SvelteKit** (static/frontend only, deployed on Cloudflare Pages via Workers)
-- **Tailwind CSS v4** + **DaisyUI** for UI
+- **Tailwind CSS v4** + **DaisyUI** for UI (custom theme `solbox`)
 - **@tailwindcss/forms** and **@tailwindcss/typography** plugins
 - **@solana/web3.js** for Solana interactions
+
+## UI Rules
+
+- **No margin, no padding** on divs/components. The only spacing allowed is minimal padding around text content (`px-2 py-1` max).
+- **Borders are the only separators.** Everything is delimited by `border border-base-300`. No gaps, no margins, no whitespace between elements.
+- **Grid/square aesthetic.** The layout must look like a tight grid — cells touching, borders shared, zero wasted space. Think terminal UI, spreadsheet, engineer dashboard.
+- **No rounded corners.** Everything is sharp 90-degree angles, no exceptions.
+- **Monospace font everywhere.** IBM Plex Mono is the only font.
+- **Muted text colors.** Never pure black or pure white — always off-white/off-black for a smooth, low-contrast feel.
