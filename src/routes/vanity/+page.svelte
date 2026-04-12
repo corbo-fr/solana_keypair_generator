@@ -7,10 +7,29 @@
 	let running = $state(false);
 	let tries = $state(0);
 	let result: { address: string; privateKey: string } | null = $state(null);
-	let error = $state('');
+	let preview: { address: string; privateKey: string } | null = $state(null);
+	let bestScore = $state(0);
+	let status: { message: string; type: 'error' | 'warning' | 'success' } | null = $state(null);
 
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 	let abortController: AbortController | null = null;
+
+	function matchScore(address: string): number {
+		let score = 0;
+		if (prefix) {
+			for (let i = 0; i < prefix.length; i++) {
+				if (address[i] === prefix[i]) score++;
+				else break;
+			}
+		}
+		if (suffix) {
+			for (let i = 0; i < suffix.length; i++) {
+				if (address[address.length - 1 - i] === suffix[suffix.length - 1 - i]) score++;
+				else break;
+			}
+		}
+		return score;
+	}
 
 	function isValidBase58(str: string): boolean {
 		return [...str].every((c) => BASE58_CHARS.includes(c));
@@ -26,18 +45,34 @@
 	async function generate() {
 		const validationError = validate();
 		if (validationError) {
-			error = validationError;
+			status = { message: validationError, type: 'error' };
 			return;
 		}
 
-		error = '';
+		status = null;
 		result = null;
+		preview = null;
+		bestScore = 0;
 		tries = 0;
 		running = true;
 		abortController = new AbortController();
 
 		const batchSize = 32;
 		const base58Decoder = getBase58Decoder();
+
+		async function extractPrivateKey(keyPair: CryptoKeyPair): Promise<string> {
+			const privateKeyBytes = new Uint8Array(
+				await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
+			);
+			const seed = privateKeyBytes.slice(16, 48);
+			const publicKeyBytes = new Uint8Array(
+				await crypto.subtle.exportKey('raw', keyPair.publicKey)
+			);
+			const fullKey = new Uint8Array(64);
+			fullKey.set(seed);
+			fullKey.set(publicKeyBytes, 32);
+			return base58Decoder.decode(fullKey);
+		}
 
 		try {
 			while (running) {
@@ -55,30 +90,27 @@
 					const matchSuffix = !suffix || address.endsWith(suffix);
 
 					if (matchPrefix && matchSuffix) {
-						const privateKeyBytes = new Uint8Array(
-							await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
-						);
-						// PKCS8 Ed25519 wrapping: raw 32-byte seed starts at byte 16
-						const seed = privateKeyBytes.slice(16, 48);
-						const publicKeyBytes = new Uint8Array(
-							await crypto.subtle.exportKey('raw', keyPair.publicKey)
-						);
-						// Solana CLI format: 64-byte array [seed(32) + pubkey(32)]
-						const fullKey = new Uint8Array(64);
-						fullKey.set(seed);
-						fullKey.set(publicKeyBytes, 32);
-
 						result = {
 							address,
-							privateKey: base58Decoder.decode(fullKey)
+							privateKey: await extractPrivateKey(keyPair)
 						};
+						status = { message: `Found in ${tries.toLocaleString()} tries`, type: 'success' };
 						running = false;
 						return;
 					}
 
+					const score = matchScore(address);
+					if (score >= bestScore) {
+						bestScore = score;
+						preview = {
+							address,
+							privateKey: await extractPrivateKey(keyPair)
+						};
+					}
+
 					if (tries >= maxTries) {
 						running = false;
-						error = `No match found after ${maxTries.toLocaleString()} tries.`;
+						status = { message: `No match after ${maxTries.toLocaleString()} tries`, type: 'error' };
 						return;
 					}
 				}
@@ -88,9 +120,9 @@
 			}
 		} catch (e: unknown) {
 			if (e instanceof DOMException && e.name === 'AbortError') {
-				error = `Stopped after ${tries.toLocaleString()} tries.`;
+				status = { message: `Stopped after ${tries.toLocaleString()} tries`, type: 'warning' };
 			} else {
-				error = `Error: ${e instanceof Error ? e.message : String(e)}`;
+				status = { message: `${e instanceof Error ? e.message : String(e)}`, type: 'error' };
 			}
 		} finally {
 			running = false;
@@ -149,30 +181,22 @@
 
 	<div class="flex border-b border-base-300">
 		{#if running}
-			<button onclick={stop} class="px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-error">STOP</button>
+			<button onclick={stop} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-error">STOP</button>
 			<span class="px-2 py-1 opacity-70">{tries.toLocaleString()} TRIES...</span>
 		{:else}
-			<button onclick={generate} class="px-2 py-1 uppercase tracking-widest hover:bg-base-200 text-primary">GENERATE</button>
+			<button onclick={generate} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-primary">GENERATE</button>
+			{#if status}
+				<span class="px-2 py-1 {status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success'}">{status.message}</span>
+			{/if}
 		{/if}
 	</div>
 
-	{#if error}
-		<div class="px-2 py-1 border-b border-base-300 text-error">{error}</div>
-	{/if}
-
-	{#if result}
-		<div class="flex flex-col border-b border-base-300">
-			<div class="flex">
-				<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">ADDRESS</label>
-				<span class="px-2 py-1 break-all">{result.address}</span>
-			</div>
-		</div>
-		<div class="flex border-b border-base-300">
-			<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PRIVATE KEY</label>
-			<span class="px-2 py-1 break-all">{result.privateKey}</span>
-		</div>
-		<div class="px-2 py-1 border-b border-base-300 opacity-70">
-			FOUND IN {tries.toLocaleString()} TRIES
-		</div>
-	{/if}
+	<div class="flex border-b border-base-300">
+		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PUBLIC KEY</label>
+		<span class="px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.address ?? preview?.address ?? ''}</span>
+	</div>
+	<div class="flex border-b border-base-300">
+		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PRIVATE KEY</label>
+		<span class="px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.privateKey ?? preview?.privateKey ?? ''}</span>
+	</div>
 </div>
