@@ -23,8 +23,8 @@
 <header class="flex items-stretch justify-between border-b border-base-300">
 	<span class="flex items-center px-2 py-1 font-bold tracking-widest"><SolanaLogo class="h-4 w-4 mr-1" /> SOLBOX</span>
 	{#if connected}
-		<button onclick={toggleConnect} class="btn btn-outline btn-success border-0 border-l border-base-300 uppercase self-stretch">{shortAddress(address)}</button>
+		<button onclick={toggleConnect} class="px-2 py-1 uppercase tracking-widest border-l border-base-300 text-success hover:bg-base-200">{shortAddress(address)}</button>
 	{:else}
-		<button onclick={toggleConnect} class="btn btn-outline btn-primary border-0 border-l border-base-300 uppercase self-stretch">CONNECT WALLET</button>
+		<button onclick={toggleConnect} class="px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200">CONNECT WALLET</button>
 	{/if}
 </header>
