@@ -229,7 +229,7 @@
 	<div class="form-row">
 		{#if running}
 			<button onclick={stop} class="form-action-left text-error">STOP</button>
-			<span class="flex-1 px-2 py-1 flex justify-between"><span class="opacity-70">{tries.toLocaleString()} TRIES...</span><span class="opacity-70">{bestScore}/{prefix.length + suffix.length}</span></span>
+			<span class="flex-1 px-2 py-1 flex justify-between" style="background:linear-gradient(to right, var(--color-base-200) {Math.min(100, (tries / maxTries) * 100)}%, transparent {Math.min(100, (tries / maxTries) * 100)}%)"><span class="opacity-70">{tries.toLocaleString()} TRIES...</span><span class="opacity-70">{bestScore}/{prefix.length + suffix.length}</span></span>
 			<button onclick={stop} class="form-action text-error">STOP</button>
 		{:else}
 			<button onclick={generate} class="form-action-left">GENERATE</button>
