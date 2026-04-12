@@ -222,9 +222,7 @@
 				class="form-input w-full {showMatchColors && prefix ? 'text-transparent caret-transparent' : ''}"
 			/>
 		</div>
-		{#if showMatchColors && prefix}
-			<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {prefixMatched() === prefix.length ? 'text-success' : ''}">{prefixMatched()}/{prefix.length}</span>
-		{/if}
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {showMatchColors && prefix ? (prefixMatched() === prefix.length ? 'text-success' : '') : 'opacity-40'}">{showMatchColors && prefix ? prefixMatched() : 0}/{prefix.length || 0}</span>
 		<button onclick={() => { prefix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
@@ -244,9 +242,7 @@
 				class="form-input w-full {showMatchColors && suffix ? 'text-transparent caret-transparent' : ''}"
 			/>
 		</div>
-		{#if showMatchColors && suffix}
-			<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {suffixMatched() === suffix.length ? 'text-success' : ''}">{suffixMatched()}/{suffix.length}</span>
-		{/if}
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {showMatchColors && suffix ? (suffixMatched() === suffix.length ? 'text-success' : '') : 'opacity-40'}">{showMatchColors && suffix ? suffixMatched() : 0}/{suffix.length || 0}</span>
 		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
