@@ -251,21 +251,6 @@
 	</div>
 
 	<div class="form-row">
-		<label class="form-label">THREADS</label>
-		<input
-			type="number"
-			bind:value={threads}
-			min={1}
-			max={64}
-			step={1}
-			disabled={running}
-			autocomplete="off"
-			class="form-input"
-		/>
-		<button onclick={() => threads = defaultThreads} disabled={running} class="form-action">AVAILABLE</button>
-	</div>
-
-	<div class="form-row">
 		<label class="form-label">MAX TRIES</label>
 		<input
 			type="number"
@@ -292,6 +277,21 @@
 			class="form-input"
 		/>
 		<button onclick={() => maxTime = 10} disabled={running} class="form-action">DEFAULT</button>
+	</div>
+
+	<div class="form-row">
+		<label class="form-label">THREADS</label>
+		<input
+			type="number"
+			bind:value={threads}
+			min={1}
+			max={64}
+			step={1}
+			disabled={running}
+			autocomplete="off"
+			class="form-input"
+		/>
+		<button onclick={() => threads = defaultThreads} disabled={running} class="form-action">AVAILABLE</button>
 	</div>
 
 	<div class="form-row">
