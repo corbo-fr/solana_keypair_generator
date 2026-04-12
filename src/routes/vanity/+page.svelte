@@ -172,6 +172,7 @@
 				oninput={clearMatchColors}
 				placeholder="SOL"
 				disabled={running}
+				autocomplete="off"
 				class="form-input"
 			/>
 		{/if}
@@ -189,6 +190,7 @@
 				oninput={clearMatchColors}
 				placeholder="BOX"
 				disabled={running}
+				autocomplete="off"
 				class="form-input"
 			/>
 		{/if}
