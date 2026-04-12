@@ -142,7 +142,7 @@
 </script>
 
 <div class="flex flex-col">
-	<h1 class="px-2 py-1 uppercase tracking-widest border-b border-base-300">VANITY ADDRESS</h1>
+	<h1 class="px-2 py-1 uppercase tracking-widest border-b border-base-300 font-bold">VANITY ADDRESS</h1>
 
 	<div class="px-2 py-1 border-b border-base-300 text-sm opacity-70">
 		Generate a Solana address that starts or ends with specific characters.
