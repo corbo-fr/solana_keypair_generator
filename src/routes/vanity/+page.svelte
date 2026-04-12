@@ -10,9 +10,14 @@
 	let preview: { address: string; privateKey: string } | null = $state(null);
 	let bestScore = $state(0);
 	let status: { message: string; type: 'error' | 'warning' | 'success' } | null = $state(null);
+	let showMatchColors = $state(false);
 
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 	let abortController: AbortController | null = null;
+
+	function clearMatchColors() {
+		showMatchColors = false;
+	}
 
 	function matchScore(address: string): number {
 		let score = 0;
@@ -55,6 +60,7 @@
 		bestScore = 0;
 		tries = 0;
 		running = true;
+		showMatchColors = true;
 		abortController = new AbortController();
 
 		const batchSize = 32;
@@ -147,26 +153,36 @@
 
 	<div class="flex border-b border-base-300">
 		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PREFIX</label>
-		<input
-			type="text"
-			bind:value={prefix}
-			placeholder="SOL"
-			disabled={running}
-			class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
-		/>
-		<button onclick={() => prefix = ''} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">CLEAN</button>
+		{#if showMatchColors && prefix}
+			<span class="flex-1 px-2 py-1 font-mono">{#each prefix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
+		{:else}
+			<input
+				type="text"
+				bind:value={prefix}
+				oninput={clearMatchColors}
+				placeholder="SOL"
+				disabled={running}
+				class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
+			/>
+		{/if}
+		<button onclick={() => { prefix = ''; clearMatchColors(); }} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">CLEAN</button>
 	</div>
 
 	<div class="flex border-b border-base-300">
 		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">SUFFIX</label>
-		<input
-			type="text"
-			bind:value={suffix}
-			placeholder="BOX"
-			disabled={running}
-			class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
-		/>
-		<button onclick={() => suffix = ''} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">CLEAN</button>
+		{#if showMatchColors && suffix}
+			<span class="flex-1 px-2 py-1 font-mono">{#each suffix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
+		{:else}
+			<input
+				type="text"
+				bind:value={suffix}
+				oninput={clearMatchColors}
+				placeholder="BOX"
+				disabled={running}
+				class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
+			/>
+		{/if}
+		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">CLEAN</button>
 	</div>
 
 	<div class="flex border-b border-base-300">
