@@ -216,7 +216,6 @@
 		<label class="form-label"><span>PREFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
 			{#if showMatchColors && prefix}
-				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{prefixMatched / prefix.length * 100}%"></div>
 				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each prefix.split('') as char, i}{#if displayAddress && displayAddress[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
 			{/if}
 			<input
@@ -229,7 +228,10 @@
 				class="form-input w-full {showMatchColors && prefix ? 'text-transparent caret-transparent' : ''}"
 			/>
 		</div>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : '') : 'opacity-40'}">{showMatchColors && prefix ? prefixMatched : 0}/{prefix.length || 0}</span>
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : '') : 'opacity-40'}">
+			{#if showMatchColors && prefix}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{prefixMatched / prefix.length * 100}%"></div>{/if}
+			<span class="relative">{showMatchColors && prefix ? prefixMatched : 0}/{prefix.length || 0}</span>
+		</span>
 		<button onclick={() => { prefix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
@@ -237,7 +239,6 @@
 		<label class="form-label"><span>SUFFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
 			{#if showMatchColors && suffix}
-				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{suffixMatched / suffix.length * 100}%"></div>
 				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each suffix.split('') as char, i}{@const addr = displayAddress}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
 			{/if}
 			<input
@@ -250,7 +251,10 @@
 				class="form-input w-full {showMatchColors && suffix ? 'text-transparent caret-transparent' : ''}"
 			/>
 		</div>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : '') : 'opacity-40'}">{showMatchColors && suffix ? suffixMatched : 0}/{suffix.length || 0}</span>
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : '') : 'opacity-40'}">
+			{#if showMatchColors && suffix}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{suffixMatched / suffix.length * 100}%"></div>{/if}
+			<span class="relative">{showMatchColors && suffix ? suffixMatched : 0}/{suffix.length || 0}</span>
+		</span>
 		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
@@ -301,11 +305,14 @@
 	<div class="form-row">
 		<button onclick={generate} disabled={running} class="form-action-left {running ? '' : 'animate-pulse'}">GENERATE</button>
 		{#if running}
-			<span class="flex-1 px-2 py-1 opacity-70 relative"><div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%"></div><span class="relative">{tries.toLocaleString()} TRIES...</span></span>
+			<span class="flex-1 px-2 py-1 opacity-70">{tries.toLocaleString()} TRIES...</span>
 		{:else}
 			<span class="flex-1 px-2 py-1 {status ? (status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success') : ''}">{status?.message ?? ''}</span>
 		{/if}
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70">{elapsed > 0 ? formatTime(elapsed) : ''}</span>
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70 relative overflow-hidden">
+			{#if running}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%"></div>{/if}
+			<span class="relative">{elapsed > 0 ? formatTime(elapsed) : ''}</span>
+		</span>
 		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'animate-pulse' : ''}">STOP</button>
 	</div>
 
