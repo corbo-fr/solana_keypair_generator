@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { generateKeyPair, getAddressFromPublicKey, getBase58Decoder } from '@solana/kit';
+	import { shortKey } from '$lib/format';
 
 	let prefix = $state('');
 	let suffix = $state('');
@@ -11,6 +12,10 @@
 	let bestScore = $state(0);
 	let status: { message: string; type: 'error' | 'warning' | 'success' } | null = $state(null);
 	let showMatchColors = $state(false);
+	let displayAddress = $derived(result?.address ?? preview?.address ?? '');
+	let displayPrivateKey = $derived(result?.privateKey ?? preview?.privateKey ?? '');
+	let addrStartLen = $derived(Math.max(4, prefix.length));
+	let addrEndLen = $derived(Math.max(4, suffix.length));
 
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 	let abortController: AbortController | null = null;
@@ -212,12 +217,12 @@
 
 	<div class="form-row">
 		<label class="form-label">PUBLIC KEY</label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''}">{result?.address ?? preview?.address ?? ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(result?.address ?? preview?.address ?? '')} disabled={!result && (running || !preview)} class="form-action">COPY</button>
+		<span class="form-value {running && !result ? 'opacity-40' : ''}">{#if showMatchColors && displayAddress}{#each displayAddress.slice(0, addrStartLen).split('') as char, i}{#if prefix && i < prefix.length && char === prefix[i]}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}...{#each displayAddress.slice(-addrEndLen).split('') as char, i}{@const realIndex = displayAddress.length - addrEndLen + i}{#if suffix && realIndex >= displayAddress.length - suffix.length && char === suffix[realIndex - (displayAddress.length - suffix.length)]}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}{:else}{displayAddress ? shortKey(displayAddress, addrStartLen, addrEndLen) : ''}{/if}</span>
+		<button onclick={() => navigator.clipboard.writeText(displayAddress)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
 	</div>
 	<div class="form-row">
 		<label class="form-label">PRIVATE KEY</label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''}">{result?.privateKey ?? preview?.privateKey ?? ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(result?.privateKey ?? preview?.privateKey ?? '')} disabled={!result && (running || !preview)} class="form-action">COPY</button>
+		<span class="form-value {running && !result ? 'opacity-40' : ''}">{displayPrivateKey ? shortKey(displayPrivateKey) : ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(displayPrivateKey)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
 	</div>
 </div>
