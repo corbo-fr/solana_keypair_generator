@@ -154,6 +154,7 @@
 			disabled={running}
 			class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
 		/>
+		<button onclick={() => prefix = ''} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">CLEAN</button>
 	</div>
 
 	<div class="flex border-b border-base-300">
@@ -165,6 +166,7 @@
 			disabled={running}
 			class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
 		/>
+		<button onclick={() => suffix = ''} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">CLEAN</button>
 	</div>
 
 	<div class="flex border-b border-base-300">
@@ -177,26 +179,29 @@
 			disabled={running}
 			class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
 		/>
+		<button onclick={() => maxTries = 1_000_000} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">DEFAULT</button>
 	</div>
 
 	<div class="flex border-b border-base-300">
 		{#if running}
 			<button onclick={stop} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-error">STOP</button>
-			<span class="px-2 py-1 opacity-70">{tries.toLocaleString()} TRIES...</span>
+			<span class="flex-1 px-2 py-1 opacity-70">{tries.toLocaleString()} TRIES...</span>
+			<button onclick={stop} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-error hover:bg-base-200">STOP</button>
 		{:else}
 			<button onclick={generate} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-primary">GENERATE</button>
-			{#if status}
-				<span class="px-2 py-1 {status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success'}">{status.message}</span>
-			{/if}
+			<span class="flex-1 px-2 py-1 {status ? (status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success') : ''}">{status?.message ?? ''}</span>
+			<button disabled class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-error opacity-40 pointer-events-none">STOP</button>
 		{/if}
 	</div>
 
 	<div class="flex border-b border-base-300">
 		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PUBLIC KEY</label>
-		<span class="px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.address ?? preview?.address ?? ''}</span>
+		<span class="flex-1 px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.address ?? preview?.address ?? ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(result?.address ?? preview?.address ?? '')} disabled={!result && !preview} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">COPY</button>
 	</div>
 	<div class="flex border-b border-base-300">
 		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PRIVATE KEY</label>
-		<span class="px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.privateKey ?? preview?.privateKey ?? ''}</span>
+		<span class="flex-1 px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.privateKey ?? preview?.privateKey ?? ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(result?.privateKey ?? preview?.privateKey ?? '')} disabled={!result && !preview} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">COPY</button>
 	</div>
 </div>
