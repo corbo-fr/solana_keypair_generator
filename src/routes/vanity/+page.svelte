@@ -22,6 +22,27 @@
 	let displayPrivateKey = $derived(result?.privateKey ?? preview?.privateKey ?? '');
 	let addrStartLen = $derived(Math.max(4, prefix.length));
 	let addrEndLen = $derived(Math.max(4, suffix.length));
+	let prefixMatched = $derived(() => {
+		const addr = result?.address ?? preview?.address;
+		if (!addr || !prefix) return 0;
+		let count = 0;
+		for (let i = 0; i < prefix.length; i++) {
+			if (addr[i] === prefix[i]) count++;
+			else break;
+		}
+		return count;
+	});
+	let suffixMatched = $derived(() => {
+		const addr = result?.address ?? preview?.address;
+		if (!addr || !suffix) return 0;
+		let count = 0;
+		for (let i = 0; i < suffix.length; i++) {
+			const ai = addr.length - suffix.length + i;
+			if (ai >= 0 && addr[ai] === suffix[i]) count++;
+			else break;
+		}
+		return count;
+	});
 
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 	let workers: Worker[] = [];
@@ -201,6 +222,9 @@
 				class="form-input w-full {showMatchColors && prefix ? 'text-transparent caret-transparent' : ''}"
 			/>
 		</div>
+		{#if showMatchColors && prefix}
+			<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {prefixMatched() === prefix.length ? 'text-success' : ''}">{prefixMatched()}/{prefix.length}</span>
+		{/if}
 		<button onclick={() => { prefix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
@@ -220,6 +244,9 @@
 				class="form-input w-full {showMatchColors && suffix ? 'text-transparent caret-transparent' : ''}"
 			/>
 		</div>
+		{#if showMatchColors && suffix}
+			<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {suffixMatched() === suffix.length ? 'text-success' : ''}">{suffixMatched()}/{suffix.length}</span>
+		{/if}
 		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
@@ -258,6 +285,7 @@
 			type="number"
 			bind:value={maxTime}
 			min={1}
+			max={1440}
 			step={1}
 			disabled={running}
 			autocomplete="off"
@@ -269,11 +297,13 @@
 	<div class="form-row">
 		{#if running}
 			<button onclick={stop} class="form-action-left text-error">STOP</button>
-			<span class="flex-1 px-2 py-1 flex justify-between" style="background:linear-gradient(to right, var(--color-base-200) {Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%, transparent {Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%)"><span class="opacity-70">{tries.toLocaleString()} TRIES...</span><span class="opacity-70">{Math.floor(elapsed / 60)}m {Math.floor(elapsed % 60)}s</span></span>
+			<span class="flex-1 px-2 py-1 opacity-70" style="background:linear-gradient(to right, var(--color-base-200) {Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%, transparent {Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%)">{tries.toLocaleString()} TRIES...</span>
+			<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70">{Math.floor(elapsed / 60)}m {Math.floor(elapsed % 60)}s</span>
 			<button onclick={stop} class="form-action text-error">STOP</button>
 		{:else}
 			<button onclick={generate} class="form-action-left">GENERATE</button>
 			<span class="flex-1 px-2 py-1 {status ? (status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success') : ''}">{status?.message ?? ''}</span>
+			<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70">{elapsed > 0 ? `${Math.floor(elapsed / 60)}m ${Math.floor(elapsed % 60)}s` : ''}</span>
 			<button disabled class="form-action text-error">STOP</button>
 		{/if}
 	</div>
