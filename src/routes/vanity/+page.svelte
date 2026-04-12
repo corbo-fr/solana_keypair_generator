@@ -44,7 +44,6 @@
 		let count = 0;
 		for (let i = 0; i < prefix.length; i++) {
 			if (displayAddress[i] === prefix[i]) count++;
-			else break;
 		}
 		return count;
 	});
@@ -55,7 +54,6 @@
 		for (let i = 0; i < suffix.length; i++) {
 			const ai = displayAddress.length - suffix.length + i;
 			if (ai >= 0 && displayAddress[ai] === suffix[i]) count++;
-			else break;
 		}
 		return count;
 	});
