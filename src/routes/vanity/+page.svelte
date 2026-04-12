@@ -2,54 +2,71 @@
 	import { onDestroy } from 'svelte';
 	import { shortKey } from '$lib/format';
 
+	// --- Constants ---
+	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+	const defaultThreads = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8;
+
+	// --- Form inputs ---
 	let prefix = $state('');
 	let suffix = $state('');
 	let maxTries = $state(10_000_000);
 	let maxTime = $state(10);
-	const defaultThreads = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8;
 	let threads = $state(defaultThreads);
+
+	// --- Generation state ---
 	let running = $state(false);
 	let tries = $state(0);
-	let startTime = $state(0);
 	let elapsed = $state(0);
-	let timerInterval: ReturnType<typeof setInterval> | null = null;
-	let result: { address: string; privateKey: string } | null = $state(null);
-	let preview: { address: string; privateKey: string } | null = $state(null);
 	let bestScore = $state(0);
-	let status: { message: string; type: 'error' | 'warning' | 'success' } | null = $state(null);
 	let showMatchColors = $state(false);
+	type KeyPair = { address: string; privateKey: string };
+	type Status = { message: string; type: 'error' | 'warning' | 'success' };
+	let status = $state<Status | null>(null);
+	let result = $state<KeyPair | null>(null);
+	let preview = $state<KeyPair | null>(null);
+
+	// --- Internal ---
+	let workers: Worker[] = [];
+	let workerTries: number[] = [];
+	let startTime = 0;
+	let timerInterval: ReturnType<typeof setInterval> | null = null;
+	let finishedCount = 0;
+	let done = false;
+
+	// --- Derived ---
 	let displayAddress = $derived(result?.address ?? preview?.address ?? '');
 	let displayPrivateKey = $derived(result?.privateKey ?? preview?.privateKey ?? '');
 	let addrStartLen = $derived(Math.max(4, prefix.length));
 	let addrEndLen = $derived(Math.max(4, suffix.length));
-	let prefixMatched = $derived(() => {
-		const addr = result?.address ?? preview?.address;
-		if (!addr || !prefix) return 0;
+
+	let prefixMatched = $derived.by(() => {
+		if (!displayAddress || !prefix) return 0;
 		let count = 0;
 		for (let i = 0; i < prefix.length; i++) {
-			if (addr[i] === prefix[i]) count++;
+			if (displayAddress[i] === prefix[i]) count++;
 			else break;
 		}
 		return count;
 	});
-	let suffixMatched = $derived(() => {
-		const addr = result?.address ?? preview?.address;
-		if (!addr || !suffix) return 0;
+
+	let suffixMatched = $derived.by(() => {
+		if (!displayAddress || !suffix) return 0;
 		let count = 0;
 		for (let i = 0; i < suffix.length; i++) {
-			const ai = addr.length - suffix.length + i;
-			if (ai >= 0 && addr[ai] === suffix[i]) count++;
+			const ai = displayAddress.length - suffix.length + i;
+			if (ai >= 0 && displayAddress[ai] === suffix[i]) count++;
 			else break;
 		}
 		return count;
 	});
 
-	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-	let workers: Worker[] = [];
-	let workerTries: number[] = [];
+	// --- Helpers ---
+	function formatTime(seconds: number): string {
+		return `${Math.floor(seconds / 60)}m ${Math.floor(seconds % 60)}s`;
+	}
 
-	function clearMatchColors() {
-		showMatchColors = false;
+	function totalTries(): number {
+		return workerTries.reduce((a, b) => a + b, 0);
 	}
 
 	function isValidBase58(str: string): boolean {
@@ -64,34 +81,92 @@
 		return null;
 	}
 
-	function stopTimer() {
+	function clearMatchColors() {
+		showMatchColors = false;
+	}
+
+	// --- Worker lifecycle ---
+	function terminateAll() {
 		if (timerInterval) {
 			clearInterval(timerInterval);
 			timerInterval = null;
 		}
-	}
-
-	function terminateAll() {
-		stopTimer();
-		for (const w of workers) {
-			w.terminate();
-		}
+		for (const w of workers) w.terminate();
 		workers = [];
 		workerTries = [];
 	}
 
-	onDestroy(() => {
-		terminateAll();
-	});
+	function stopWorkers() {
+		for (const w of workers) w.postMessage({ type: 'stop' });
+	}
 
-	function generate() {
-		const validationError = validate();
-		if (validationError) {
-			status = { message: validationError, type: 'error' };
+	function finish(finalStatus: { message: string; type: 'error' | 'warning' | 'success' }) {
+		if (done) return;
+		done = true;
+		tries = totalTries();
+		elapsed = (Date.now() - startTime) / 1000;
+		status = finalStatus;
+		terminateAll();
+		running = false;
+	}
+
+	function handleWorkerMessage(workerIndex: number, data: any) {
+		if (done) return;
+
+		if (data.type === 'progress') {
+			workerTries[workerIndex] = data.tries;
+			tries = totalTries();
+
+			if (data.bestScore > bestScore) {
+				bestScore = data.bestScore;
+				preview = { address: data.bestAddress, privateKey: data.bestPrivateKey };
+			}
+
+			if (tries >= maxTries) stopWorkers();
 			return;
 		}
 
-		// Clean up any leftover workers
+		if (data.type === 'found') {
+			workerTries[workerIndex] = data.tries;
+			result = data.result;
+			finish({ message: `Found in ${totalTries().toLocaleString()} tries (${formatTime((Date.now() - startTime) / 1000)})`, type: 'success' });
+			return;
+		}
+
+		if (data.type === 'error') {
+			stopWorkers();
+			finish({ message: data.message, type: 'error' });
+			return;
+		}
+
+		if (data.type === 'stopped') {
+			workerTries[workerIndex] = data.tries ?? workerTries[workerIndex];
+			if (data.preview && data.bestScore >= bestScore) {
+				bestScore = data.bestScore;
+				preview = data.preview;
+			}
+
+			finishedCount++;
+			if (finishedCount < workers.length) return;
+
+			const t = totalTries();
+			const time = formatTime((Date.now() - startTime) / 1000);
+			if (t >= maxTries || (Date.now() - startTime) / 1000 >= maxTime * 60) {
+				finish({ message: `No match after ${t.toLocaleString()} tries (${time})`, type: 'error' });
+			} else {
+				finish({ message: `Stopped after ${t.toLocaleString()} tries (${time})`, type: 'warning' });
+			}
+		}
+	}
+
+	// --- Actions ---
+	function generate() {
+		const error = validate();
+		if (error) {
+			status = { message: error, type: 'error' };
+			return;
+		}
+
 		terminateAll();
 
 		status = null;
@@ -100,100 +175,31 @@
 		bestScore = 0;
 		tries = 0;
 		elapsed = 0;
+		finishedCount = 0;
+		done = false;
 		startTime = Date.now();
 		running = true;
 		showMatchColors = true;
 
 		timerInterval = setInterval(() => {
 			elapsed = (Date.now() - startTime) / 1000;
-			if (elapsed >= maxTime * 60) {
-				for (const w of workers) w.postMessage({ type: 'stop' });
-			}
+			if (elapsed >= maxTime * 60) stopWorkers();
 		}, 200);
 
-		const threadCount = threads;
-		let finishedCount = 0;
-		let done = false;
-		workerTries = new Array(threadCount).fill(0);
-
-		function finish(finalStatus?: { message: string; type: 'error' | 'warning' | 'success' }) {
-			if (done) return;
-			done = true;
-			tries = workerTries.reduce((a, b) => a + b, 0);
-			terminateAll();
-			running = false;
-			if (finalStatus) status = finalStatus;
-		}
-
-		for (let i = 0; i < threadCount; i++) {
+		workerTries = new Array(threads).fill(0);
+		for (let i = 0; i < threads; i++) {
 			const w = new Worker(new URL('./vanity-worker.ts', import.meta.url), { type: 'module' });
-
-			w.onmessage = (e) => {
-				if (done) return;
-				const data = e.data;
-
-				if (data.type === 'progress') {
-					workerTries[i] = data.tries;
-					tries = workerTries.reduce((a, b) => a + b, 0);
-
-					if (data.bestScore > bestScore) {
-						bestScore = data.bestScore;
-						if (data.bestAddress) {
-							preview = { address: data.bestAddress, privateKey: data.bestPrivateKey };
-						}
-					}
-
-					if (tries >= maxTries) {
-						for (const w of workers) w.postMessage({ type: 'stop' });
-					}
-				}
-
-				if (data.type === 'found') {
-					workerTries[i] = data.tries;
-					elapsed = (Date.now() - startTime) / 1000;
-					result = data.result;
-					finish({ message: `Found in ${workerTries.reduce((a, b) => a + b, 0).toLocaleString()} tries (${Math.floor(elapsed / 60)}m ${Math.floor(elapsed % 60)}s)`, type: 'success' });
-				}
-
-				if (data.type === 'stopped' || data.type === 'error') {
-					workerTries[i] = data.tries ?? workerTries[i];
-					finishedCount++;
-
-					// Keep the best preview from stopped workers
-					if (data.type === 'stopped' && data.preview && data.bestScore >= bestScore) {
-						bestScore = data.bestScore;
-						preview = data.preview;
-					}
-
-					if (data.type === 'error' && !done) {
-						for (const w of workers) w.postMessage({ type: 'stop' });
-						finish({ message: data.message, type: 'error' });
-						return;
-					}
-
-					if (finishedCount >= threadCount) {
-						elapsed = (Date.now() - startTime) / 1000;
-						const totalTries = workerTries.reduce((a, b) => a + b, 0);
-						const timeStr = `${Math.floor(elapsed / 60)}m ${Math.floor(elapsed % 60)}s`;
-						if (totalTries >= maxTries || elapsed >= maxTime * 60) {
-							finish({ message: `No match after ${totalTries.toLocaleString()} tries (${timeStr})`, type: 'error' });
-						} else {
-							finish({ message: `Stopped after ${totalTries.toLocaleString()} tries (${timeStr})`, type: 'warning' });
-						}
-					}
-				}
-			};
-
+			w.onmessage = (e) => handleWorkerMessage(i, e.data);
 			workers.push(w);
 			w.postMessage({ type: 'start', prefix, suffix });
 		}
 	}
 
 	function stop() {
-		for (const w of workers) {
-			w.postMessage({ type: 'stop' });
-		}
+		stopWorkers();
 	}
+
+	onDestroy(terminateAll);
 </script>
 
 <div class="flex flex-col">
@@ -210,8 +216,8 @@
 		<label class="form-label"><span>PREFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
 			{#if showMatchColors && prefix}
-				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{prefixMatched() / prefix.length * 100}%"></div>
-				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each prefix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
+				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{prefixMatched / prefix.length * 100}%"></div>
+				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each prefix.split('') as char, i}{#if displayAddress && displayAddress[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
 			{/if}
 			<input
 				type="text"
@@ -223,7 +229,7 @@
 				class="form-input w-full {showMatchColors && prefix ? 'text-transparent caret-transparent' : ''}"
 			/>
 		</div>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {showMatchColors && prefix ? (prefixMatched() === prefix.length ? 'text-success' : '') : 'opacity-40'}">{showMatchColors && prefix ? prefixMatched() : 0}/{prefix.length || 0}</span>
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : '') : 'opacity-40'}">{showMatchColors && prefix ? prefixMatched : 0}/{prefix.length || 0}</span>
 		<button onclick={() => { prefix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
@@ -231,8 +237,8 @@
 		<label class="form-label"><span>SUFFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
 			{#if showMatchColors && suffix}
-				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{suffixMatched() / suffix.length * 100}%"></div>
-				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each suffix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
+				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{suffixMatched / suffix.length * 100}%"></div>
+				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each suffix.split('') as char, i}{@const addr = displayAddress}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
 			{/if}
 			<input
 				type="text"
@@ -244,7 +250,7 @@
 				class="form-input w-full {showMatchColors && suffix ? 'text-transparent caret-transparent' : ''}"
 			/>
 		</div>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {showMatchColors && suffix ? (suffixMatched() === suffix.length ? 'text-success' : '') : 'opacity-40'}">{showMatchColors && suffix ? suffixMatched() : 0}/{suffix.length || 0}</span>
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : '') : 'opacity-40'}">{showMatchColors && suffix ? suffixMatched : 0}/{suffix.length || 0}</span>
 		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
@@ -299,7 +305,7 @@
 		{:else}
 			<span class="flex-1 px-2 py-1 {status ? (status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success') : ''}">{status?.message ?? ''}</span>
 		{/if}
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70">{elapsed > 0 ? `${Math.floor(elapsed / 60)}m ${Math.floor(elapsed % 60)}s` : ''}</span>
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70">{elapsed > 0 ? formatTime(elapsed) : ''}</span>
 		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'animate-pulse' : ''}">STOP</button>
 	</div>
 
