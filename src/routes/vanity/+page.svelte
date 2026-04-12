@@ -207,7 +207,7 @@
 			autocomplete="off"
 			class="form-input"
 		/>
-		<button onclick={() => threads = defaultThreads} disabled={running} class="form-action">DEFAULT</button>
+		<button onclick={() => threads = defaultThreads} disabled={running} class="form-action">AVAILABLE</button>
 	</div>
 
 	<div class="form-row">
