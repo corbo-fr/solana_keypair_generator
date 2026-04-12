@@ -213,11 +213,11 @@
 	<div class="flex border-b border-base-300">
 		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PUBLIC KEY</label>
 		<span class="flex-1 px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.address ?? preview?.address ?? ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(result?.address ?? preview?.address ?? '')} disabled={!result && !preview} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">COPY</button>
+		<button onclick={() => navigator.clipboard.writeText(result?.address ?? preview?.address ?? '')} disabled={!result && (running || !preview)} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">COPY</button>
 	</div>
 	<div class="flex border-b border-base-300">
 		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PRIVATE KEY</label>
 		<span class="flex-1 px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.privateKey ?? preview?.privateKey ?? ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(result?.privateKey ?? preview?.privateKey ?? '')} disabled={!result && !preview} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">COPY</button>
+		<button onclick={() => navigator.clipboard.writeText(result?.privateKey ?? preview?.privateKey ?? '')} disabled={!result && (running || !preview)} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">COPY</button>
 	</div>
 </div>
