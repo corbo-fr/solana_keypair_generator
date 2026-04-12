@@ -185,7 +185,7 @@
 	<div class="flex border-b border-base-300">
 		{#if running}
 			<button onclick={stop} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-error">STOP</button>
-			<span class="flex-1 px-2 py-1 opacity-70">{tries.toLocaleString()} TRIES...</span>
+			<span class="flex-1 px-2 py-1 flex justify-between"><span class="opacity-70">{tries.toLocaleString()} TRIES...</span><span class="opacity-70">{bestScore}/{prefix.length + suffix.length}</span></span>
 			<button onclick={stop} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-error hover:bg-base-200">STOP</button>
 		{:else}
 			<button onclick={generate} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-primary">GENERATE</button>
