@@ -1,6 +1,7 @@
 <script lang="ts">
 	const pages = [
 		{ label: 'WALLET', href: '/' },
+		{ label: 'VANITY', href: '/vanity' },
 		{ label: 'TRANSFER', href: '/transfer' },
 		{ label: 'TOKENS', href: '/tokens' },
 		{ label: 'KEYPAIR', href: '/keypair' },
