@@ -163,9 +163,10 @@
 
 	<div class="form-row">
 		<label class="form-label">PREFIX</label>
-		{#if showMatchColors && prefix}
-			<span class="flex-1 px-2 py-1 font-mono">{#each prefix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
-		{:else}
+		<div class="flex-1 relative">
+			{#if showMatchColors && prefix}
+				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each prefix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
+			{/if}
 			<input
 				type="text"
 				bind:value={prefix}
@@ -173,17 +174,18 @@
 				placeholder="SOL"
 				disabled={running}
 				autocomplete="off"
-				class="form-input"
+				class="form-input w-full {showMatchColors && prefix ? 'text-transparent caret-transparent' : ''}"
 			/>
-		{/if}
+		</div>
 		<button onclick={() => { prefix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
 	<div class="form-row">
 		<label class="form-label">SUFFIX</label>
-		{#if showMatchColors && suffix}
-			<span class="flex-1 px-2 py-1 font-mono">{#each suffix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
-		{:else}
+		<div class="flex-1 relative">
+			{#if showMatchColors && suffix}
+				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each suffix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
+			{/if}
 			<input
 				type="text"
 				bind:value={suffix}
@@ -191,9 +193,9 @@
 				placeholder="BOX"
 				disabled={running}
 				autocomplete="off"
-				class="form-input"
+				class="form-input w-full {showMatchColors && suffix ? 'text-transparent caret-transparent' : ''}"
 			/>
-		{/if}
+		</div>
 		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
