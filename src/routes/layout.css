@@ -131,7 +131,7 @@ body {
 
 /* Label cell — fixed-width left column */
 .form-label {
-  @apply w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300;
+  @apply flex items-center w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300;
 }
 
 /* Value cell — flexible middle column for text display */

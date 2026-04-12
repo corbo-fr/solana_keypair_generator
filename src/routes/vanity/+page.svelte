@@ -207,7 +207,7 @@
 	</div>
 
 	<div class="form-row">
-		<label class="form-label">PREFIX</label>
+		<label class="form-label"><span>PREFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
 			{#if showMatchColors && prefix}
 				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each prefix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
@@ -229,7 +229,7 @@
 	</div>
 
 	<div class="form-row">
-		<label class="form-label">SUFFIX</label>
+		<label class="form-label"><span>SUFFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
 			{#if showMatchColors && suffix}
 				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each suffix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
@@ -265,7 +265,7 @@
 	</div>
 
 	<div class="form-row">
-		<label class="form-label">MAX TIME</label>
+		<label class="form-label"><span>MAX TIME</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">min</span></label>
 		<input
 			type="number"
 			bind:value={maxTime}
