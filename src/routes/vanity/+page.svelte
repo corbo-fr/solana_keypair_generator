@@ -118,7 +118,7 @@
 					if (data.bestScore > bestScore) {
 						bestScore = data.bestScore;
 						if (data.bestAddress) {
-							preview = { address: data.bestAddress, privateKey: '' };
+							preview = { address: data.bestAddress, privateKey: data.bestPrivateKey };
 						}
 					}
 
@@ -285,7 +285,7 @@
 	</div>
 	<div class="form-row">
 		<label class="form-label">PRIVATE KEY</label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''}">{displayPrivateKey ? shortKey(displayPrivateKey) : ''}</span>
+		<span class="form-value {running && !result ? 'opacity-40' : ''}">{displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : ''}</span>
 		<button onclick={() => navigator.clipboard.writeText(displayPrivateKey)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
 	</div>
 </div>

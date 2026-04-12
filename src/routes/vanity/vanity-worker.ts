@@ -77,7 +77,8 @@ self.onmessage = (e: MessageEvent) => {
 				type: 'progress',
 				tries,
 				bestScore,
-				bestAddress
+				bestAddress,
+				bestPrivateKey: bestSecretKey ? base58Decoder.decode(bestSecretKey) : ''
 			});
 
 			setTimeout(runChunk, 0);
