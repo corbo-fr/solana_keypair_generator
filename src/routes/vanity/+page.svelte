@@ -291,17 +291,14 @@
 	</div>
 
 	<div class="form-row">
+		<button onclick={generate} disabled={running} class="form-action-left">GENERATE</button>
 		{#if running}
-			<button onclick={stop} class="form-action-left text-error">STOP</button>
 			<span class="flex-1 px-2 py-1 opacity-70" style="background:linear-gradient(to right, var(--color-base-200) {Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%, transparent {Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%)">{tries.toLocaleString()} TRIES...</span>
-			<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70">{Math.floor(elapsed / 60)}m {Math.floor(elapsed % 60)}s</span>
-			<button onclick={stop} class="form-action text-error">STOP</button>
 		{:else}
-			<button onclick={generate} class="form-action-left">GENERATE</button>
 			<span class="flex-1 px-2 py-1 {status ? (status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success') : ''}">{status?.message ?? ''}</span>
-			<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70">{elapsed > 0 ? `${Math.floor(elapsed / 60)}m ${Math.floor(elapsed % 60)}s` : ''}</span>
-			<button disabled class="form-action text-error">STOP</button>
 		{/if}
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70">{elapsed > 0 ? `${Math.floor(elapsed / 60)}m ${Math.floor(elapsed % 60)}s` : ''}</span>
+		<button onclick={stop} disabled={!running} class="form-action !text-error">STOP</button>
 	</div>
 
 	<div class="form-row">
