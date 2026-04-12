@@ -114,7 +114,7 @@
 	</div>
 
 	<div class="flex border-b border-base-300">
-		<label class="px-2 py-1 uppercase tracking-widest border-r border-base-300">PREFIX</label>
+		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PREFIX</label>
 		<input
 			type="text"
 			bind:value={prefix}
@@ -125,7 +125,7 @@
 	</div>
 
 	<div class="flex border-b border-base-300">
-		<label class="px-2 py-1 uppercase tracking-widest border-r border-base-300">SUFFIX</label>
+		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">SUFFIX</label>
 		<input
 			type="text"
 			bind:value={suffix}
@@ -136,7 +136,7 @@
 	</div>
 
 	<div class="flex border-b border-base-300">
-		<label class="px-2 py-1 uppercase tracking-widest border-r border-base-300">MAX TRIES</label>
+		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">MAX TRIES</label>
 		<input
 			type="number"
 			bind:value={maxTries}
@@ -152,7 +152,7 @@
 			<button onclick={stop} class="px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-error">STOP</button>
 			<span class="px-2 py-1 opacity-70">{tries.toLocaleString()} TRIES...</span>
 		{:else}
-			<button onclick={generate} class="px-2 py-1 uppercase tracking-widest hover:bg-base-200">GENERATE</button>
+			<button onclick={generate} class="px-2 py-1 uppercase tracking-widest hover:bg-base-200 text-primary">GENERATE</button>
 		{/if}
 	</div>
 
@@ -163,12 +163,12 @@
 	{#if result}
 		<div class="flex flex-col border-b border-base-300">
 			<div class="flex">
-				<label class="px-2 py-1 uppercase tracking-widest border-r border-base-300">ADDRESS</label>
+				<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">ADDRESS</label>
 				<span class="px-2 py-1 break-all">{result.address}</span>
 			</div>
 		</div>
 		<div class="flex border-b border-base-300">
-			<label class="px-2 py-1 uppercase tracking-widest border-r border-base-300">PRIVATE KEY</label>
+			<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PRIVATE KEY</label>
 			<span class="px-2 py-1 break-all">{result.privateKey}</span>
 		</div>
 		<div class="px-2 py-1 border-b border-base-300 opacity-70">

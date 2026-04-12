@@ -29,6 +29,8 @@ The user provides their own **RPC URL** in the frontend interface, which is used
 - **Monospace font everywhere.** IBM Plex Mono is the only font.
 - **Muted text colors.** Never pure black or pure white — always off-white/off-black for a smooth, low-contrast feel.
 - **All titles/labels uppercase.** Every title, heading, and label text must be uppercase.
+- **Button text color.** All buttons use `text-primary` by default (same color as the "CONNECT WALLET" button). Only use semantic colors for contextual states: `text-error` for destructive/stop actions, `text-success` for success/confirmation, `text-warning` for warnings. Never leave buttons with default/unstyled text color.
+- **Grid system for forms.** All label+value rows use `flex` with labels having a fixed width (`w-40 shrink-0`) and values taking the remaining space (`flex-1`). Labels are always left-aligned with `px-2 py-1 uppercase tracking-widest border-r border-base-300`. This ensures all labels across a page share the same column width, creating a strict grid alignment. Every page must follow this pattern for any label/input or label/value pair.
 
 ## Icons & Logos
 
