@@ -142,17 +142,17 @@
 </script>
 
 <div class="flex flex-col">
-	<h1 class="px-2 py-1 uppercase tracking-widest border-b border-base-300 font-bold">VANITY ADDRESS</h1>
+	<h1 class="page-title">VANITY ADDRESS</h1>
 
-	<div class="px-2 py-1 border-b border-base-300 text-sm opacity-70">
+	<div class="page-description">
 		Generate a Solana address that starts or ends with specific characters.
 		Brute-forces random keypairs until a match is found. Longer patterns take
 		exponentially more tries. Valid characters are base58:
 		1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l).
 	</div>
 
-	<div class="flex border-b border-base-300">
-		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PREFIX</label>
+	<div class="form-row">
+		<label class="form-label">PREFIX</label>
 		{#if showMatchColors && prefix}
 			<span class="flex-1 px-2 py-1 font-mono">{#each prefix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
 		{:else}
@@ -162,14 +162,14 @@
 				oninput={clearMatchColors}
 				placeholder="SOL"
 				disabled={running}
-				class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
+				class="form-input"
 			/>
 		{/if}
-		<button onclick={() => { prefix = ''; clearMatchColors(); }} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">CLEAN</button>
+		<button onclick={() => { prefix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
-	<div class="flex border-b border-base-300">
-		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">SUFFIX</label>
+	<div class="form-row">
+		<label class="form-label">SUFFIX</label>
 		{#if showMatchColors && suffix}
 			<span class="flex-1 px-2 py-1 font-mono">{#each suffix.split('') as char, i}{@const addr = result?.address ?? preview?.address}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
 		{:else}
@@ -179,45 +179,45 @@
 				oninput={clearMatchColors}
 				placeholder="BOX"
 				disabled={running}
-				class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
+				class="form-input"
 			/>
 		{/if}
-		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">CLEAN</button>
+		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
-	<div class="flex border-b border-base-300">
-		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">MAX TRIES</label>
+	<div class="form-row">
+		<label class="form-label">MAX TRIES</label>
 		<input
 			type="number"
 			bind:value={maxTries}
 			min={1000}
 			step={1000}
 			disabled={running}
-			class="flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono"
+			class="form-input"
 		/>
-		<button onclick={() => maxTries = 1_000_000} disabled={running} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">DEFAULT</button>
+		<button onclick={() => maxTries = 1_000_000} disabled={running} class="form-action">DEFAULT</button>
 	</div>
 
-	<div class="flex border-b border-base-300">
+	<div class="form-row">
 		{#if running}
-			<button onclick={stop} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-error">STOP</button>
+			<button onclick={stop} class="form-action-left text-error">STOP</button>
 			<span class="flex-1 px-2 py-1 flex justify-between"><span class="opacity-70">{tries.toLocaleString()} TRIES...</span><span class="opacity-70">{bestScore}/{prefix.length + suffix.length}</span></span>
-			<button onclick={stop} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-error hover:bg-base-200">STOP</button>
+			<button onclick={stop} class="form-action text-error">STOP</button>
 		{:else}
-			<button onclick={generate} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest hover:bg-base-200 border-r border-base-300 text-primary">GENERATE</button>
+			<button onclick={generate} class="form-action-left">GENERATE</button>
 			<span class="flex-1 px-2 py-1 {status ? (status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success') : ''}">{status?.message ?? ''}</span>
-			<button disabled class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-error opacity-40 pointer-events-none">STOP</button>
+			<button disabled class="form-action text-error">STOP</button>
 		{/if}
 	</div>
 
-	<div class="flex border-b border-base-300">
-		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PUBLIC KEY</label>
-		<span class="flex-1 px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.address ?? preview?.address ?? ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(result?.address ?? preview?.address ?? '')} disabled={!result && (running || !preview)} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">COPY</button>
+	<div class="form-row">
+		<label class="form-label">PUBLIC KEY</label>
+		<span class="form-value {running && !result ? 'opacity-40' : ''}">{result?.address ?? preview?.address ?? ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(result?.address ?? preview?.address ?? '')} disabled={!result && (running || !preview)} class="form-action">COPY</button>
 	</div>
-	<div class="flex border-b border-base-300">
-		<label class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300">PRIVATE KEY</label>
-		<span class="flex-1 px-2 py-1 break-all {running && !result ? 'opacity-40' : ''}">{result?.privateKey ?? preview?.privateKey ?? ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(result?.privateKey ?? preview?.privateKey ?? '')} disabled={!result && (running || !preview)} class="w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">COPY</button>
+	<div class="form-row">
+		<label class="form-label">PRIVATE KEY</label>
+		<span class="form-value {running && !result ? 'opacity-40' : ''}">{result?.privateKey ?? preview?.privateKey ?? ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(result?.privateKey ?? preview?.privateKey ?? '')} disabled={!result && (running || !preview)} class="form-action">COPY</button>
 	</div>
 </div>

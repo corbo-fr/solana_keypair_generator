@@ -111,3 +111,45 @@ body {
 .modal-box {
   padding: 0.5rem;
 }
+
+/* ── Reusable layout classes ── */
+
+/* Page title — first element of every page */
+.page-title {
+  @apply px-2 py-1 uppercase tracking-widest border-b border-base-300 font-bold;
+}
+
+/* Page description — optional subtitle/help text below title */
+.page-description {
+  @apply px-2 py-1 border-b border-base-300 text-sm opacity-70;
+}
+
+/* Form row — horizontal container for label + input/value + action */
+.form-row {
+  @apply flex border-b border-base-300;
+}
+
+/* Label cell — fixed-width left column */
+.form-label {
+  @apply w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300;
+}
+
+/* Value cell — flexible middle column for text display */
+.form-value {
+  @apply flex-1 px-2 py-1 break-all;
+}
+
+/* Input cell — flexible middle column for inputs */
+.form-input {
+  @apply flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono;
+}
+
+/* Action button — fixed-width right column */
+.form-action {
+  @apply w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none;
+}
+
+/* Action button — fixed-width left column (e.g. GENERATE) */
+.form-action-left {
+  @apply w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none;
+}
