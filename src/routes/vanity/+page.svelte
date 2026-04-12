@@ -307,9 +307,9 @@
 		{:else}
 			<span class="flex-1 px-2 py-1 {status ? (status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success') : ''}">{status?.message ?? ''}</span>
 		{/if}
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center opacity-70 relative overflow-hidden">
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {running || elapsed > 0 ? 'opacity-70' : 'opacity-40'} relative overflow-hidden">
 			{#if running}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%"></div>{/if}
-			<span class="relative">{elapsed > 0 ? formatTime(elapsed) : ''}</span>
+			<span class="relative">{formatTime(elapsed)}</span>
 		</span>
 		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'animate-pulse' : ''}">STOP</button>
 	</div>
