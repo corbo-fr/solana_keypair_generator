@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SolanaLogo from '$lib/components/icons/SolanaLogo.svelte';
+
 	let connected = $state(false);
 	let address = $state('');
 
@@ -19,7 +21,7 @@
 </script>
 
 <header class="flex items-stretch justify-between border-b border-base-300">
-	<span class="flex items-center px-2 py-1 font-bold tracking-widest">SOLBOX</span>
+	<span class="flex items-center px-2 py-1 font-bold tracking-widest"><SolanaLogo class="h-4 w-4 mr-1" /> SOLBOX</span>
 	{#if connected}
 		<button onclick={toggleConnect} class="btn btn-outline btn-success border-0 border-l border-base-300 uppercase self-stretch">{shortAddress(address)}</button>
 	{:else}

@@ -29,3 +29,10 @@ The user provides their own **RPC URL** in the frontend interface, which is used
 - **Monospace font everywhere.** IBM Plex Mono is the only font.
 - **Muted text colors.** Never pure black or pure white — always off-white/off-black for a smooth, low-contrast feel.
 - **All titles/labels uppercase.** Every title, heading, and label text must be uppercase.
+
+## Icons & Logos
+
+- All SVG icons/logos are sourced from **Iconify** (https://icon-sets.iconify.design/).
+- Each icon is a standalone Svelte component in `src/lib/components/icons/` (e.g. `SolanaLogo.svelte`).
+- Icons use `fill="currentColor"` so they inherit the parent's text color.
+- Always reuse existing icon components — import from `$lib/components/icons/` instead of duplicating SVGs inline.
