@@ -28,3 +28,4 @@ The user provides their own **RPC URL** in the frontend interface, which is used
 - **No rounded corners.** Everything is sharp 90-degree angles, no exceptions.
 - **Monospace font everywhere.** IBM Plex Mono is the only font.
 - **Muted text colors.** Never pure black or pure white — always off-white/off-black for a smooth, low-contrast feel.
+- **All titles/labels uppercase.** Every title, heading, and label text must be uppercase.
