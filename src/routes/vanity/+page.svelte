@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { generateKeyPair, getAddressFromPublicKey, getBase58Decoder } from '@solana/kit';
+	import { onDestroy } from 'svelte';
 	import { shortKey } from '$lib/format';
 
 	let prefix = $state('');
 	let suffix = $state('');
 	let maxTries = $state(1_000_000);
+	const defaultThreads = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8;
+	let threads = $state(defaultThreads);
 	let running = $state(false);
 	let tries = $state(0);
 	let result: { address: string; privateKey: string } | null = $state(null);
@@ -18,27 +20,11 @@
 	let addrEndLen = $derived(Math.max(4, suffix.length));
 
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-	let abortController: AbortController | null = null;
+	let workers: Worker[] = [];
+	let workerTries: number[] = [];
 
 	function clearMatchColors() {
 		showMatchColors = false;
-	}
-
-	function matchScore(address: string): number {
-		let score = 0;
-		if (prefix) {
-			for (let i = 0; i < prefix.length; i++) {
-				if (address[i] === prefix[i]) score++;
-				else break;
-			}
-		}
-		if (suffix) {
-			for (let i = 0; i < suffix.length; i++) {
-				if (address[address.length - 1 - i] === suffix[suffix.length - 1 - i]) score++;
-				else break;
-			}
-		}
-		return score;
 	}
 
 	function isValidBase58(str: string): boolean {
@@ -49,15 +35,31 @@
 		if (!prefix && !suffix) return 'Enter a prefix or suffix (or both).';
 		if (prefix && !isValidBase58(prefix)) return 'Prefix contains invalid base58 characters.';
 		if (suffix && !isValidBase58(suffix)) return 'Suffix contains invalid base58 characters.';
+		if (threads < 1 || threads > 64) return 'Threads must be between 1 and 64.';
 		return null;
 	}
 
-	async function generate() {
+	function terminateAll() {
+		for (const w of workers) {
+			w.terminate();
+		}
+		workers = [];
+		workerTries = [];
+	}
+
+	onDestroy(() => {
+		terminateAll();
+	});
+
+	function generate() {
 		const validationError = validate();
 		if (validationError) {
 			status = { message: validationError, type: 'error' };
 			return;
 		}
+
+		// Clean up any leftover workers
+		terminateAll();
 
 		status = null;
 		result = null;
@@ -66,83 +68,86 @@
 		tries = 0;
 		running = true;
 		showMatchColors = true;
-		abortController = new AbortController();
 
-		const batchSize = 32;
-		const base58Decoder = getBase58Decoder();
+		const threadCount = threads;
+		let finishedCount = 0;
+		let done = false;
+		workerTries = new Array(threadCount).fill(0);
 
-		async function extractPrivateKey(keyPair: CryptoKeyPair): Promise<string> {
-			const privateKeyBytes = new Uint8Array(
-				await crypto.subtle.exportKey('pkcs8', keyPair.privateKey)
-			);
-			const seed = privateKeyBytes.slice(16, 48);
-			const publicKeyBytes = new Uint8Array(
-				await crypto.subtle.exportKey('raw', keyPair.publicKey)
-			);
-			const fullKey = new Uint8Array(64);
-			fullKey.set(seed);
-			fullKey.set(publicKeyBytes, 32);
-			return base58Decoder.decode(fullKey);
+		function finish(finalStatus?: { message: string; type: 'error' | 'warning' | 'success' }) {
+			if (done) return;
+			done = true;
+			tries = workerTries.reduce((a, b) => a + b, 0);
+			terminateAll();
+			running = false;
+			if (finalStatus) status = finalStatus;
 		}
 
-		try {
-			while (running) {
-				abortController.signal.throwIfAborted();
+		for (let i = 0; i < threadCount; i++) {
+			const w = new Worker(new URL('./vanity-worker.ts', import.meta.url), { type: 'module' });
 
-				const batch = await Promise.all(
-					Array.from({ length: batchSize }, () => generateKeyPair(true))
-				);
+			w.onmessage = (e) => {
+				if (done) return;
+				const data = e.data;
 
-				for (const keyPair of batch) {
-					tries++;
-					const address = await getAddressFromPublicKey(keyPair.publicKey);
+				if (data.type === 'progress') {
+					workerTries[i] = data.tries;
+					tries = workerTries.reduce((a, b) => a + b, 0);
 
-					const matchPrefix = !prefix || address.startsWith(prefix);
-					const matchSuffix = !suffix || address.endsWith(suffix);
-
-					if (matchPrefix && matchSuffix) {
-						result = {
-							address,
-							privateKey: await extractPrivateKey(keyPair)
-						};
-						status = { message: `Found in ${tries.toLocaleString()} tries`, type: 'success' };
-						running = false;
-						return;
-					}
-
-					const score = matchScore(address);
-					if (score >= bestScore) {
-						bestScore = score;
-						preview = {
-							address,
-							privateKey: await extractPrivateKey(keyPair)
-						};
+					if (data.bestScore > bestScore) {
+						bestScore = data.bestScore;
+						if (data.bestAddress) {
+							preview = { address: data.bestAddress, privateKey: '' };
+						}
 					}
 
 					if (tries >= maxTries) {
-						running = false;
-						status = { message: `No match after ${maxTries.toLocaleString()} tries`, type: 'error' };
-						return;
+						for (const w of workers) w.postMessage({ type: 'stop' });
 					}
 				}
 
-				// Yield to UI
-				await new Promise((r) => setTimeout(r, 0));
-			}
-		} catch (e: unknown) {
-			if (e instanceof DOMException && e.name === 'AbortError') {
-				status = { message: `Stopped after ${tries.toLocaleString()} tries`, type: 'warning' };
-			} else {
-				status = { message: `${e instanceof Error ? e.message : String(e)}`, type: 'error' };
-			}
-		} finally {
-			running = false;
-			abortController = null;
+				if (data.type === 'found') {
+					workerTries[i] = data.tries;
+					result = data.result;
+					finish({ message: `Found in ${workerTries.reduce((a, b) => a + b, 0).toLocaleString()} tries`, type: 'success' });
+				}
+
+				if (data.type === 'stopped' || data.type === 'error') {
+					workerTries[i] = data.tries ?? workerTries[i];
+					finishedCount++;
+
+					// Keep the best preview from stopped workers
+					if (data.type === 'stopped' && data.preview && data.bestScore >= bestScore) {
+						bestScore = data.bestScore;
+						preview = data.preview;
+					}
+
+					if (data.type === 'error' && !done) {
+						for (const w of workers) w.postMessage({ type: 'stop' });
+						finish({ message: data.message, type: 'error' });
+						return;
+					}
+
+					if (finishedCount >= threadCount) {
+						const totalTries = workerTries.reduce((a, b) => a + b, 0);
+						if (totalTries >= maxTries) {
+							finish({ message: `No match after ${totalTries.toLocaleString()} tries`, type: 'error' });
+						} else {
+							finish({ message: `Stopped after ${totalTries.toLocaleString()} tries`, type: 'warning' });
+						}
+					}
+				}
+			};
+
+			workers.push(w);
+			w.postMessage({ type: 'start', prefix, suffix });
 		}
 	}
 
 	function stop() {
-		abortController?.abort();
+		for (const w of workers) {
+			w.postMessage({ type: 'stop' });
+		}
 	}
 </script>
 
@@ -191,6 +196,21 @@
 	</div>
 
 	<div class="form-row">
+		<label class="form-label">THREADS</label>
+		<input
+			type="number"
+			bind:value={threads}
+			min={1}
+			max={64}
+			step={1}
+			disabled={running}
+			autocomplete="off"
+			class="form-input"
+		/>
+		<button onclick={() => threads = defaultThreads} disabled={running} class="form-action">DEFAULT</button>
+	</div>
+
+	<div class="form-row">
 		<label class="form-label">MAX TRIES</label>
 		<input
 			type="number"
@@ -198,6 +218,7 @@
 			min={1000}
 			step={1000}
 			disabled={running}
+			autocomplete="off"
 			class="form-input"
 		/>
 		<button onclick={() => maxTries = 1_000_000} disabled={running} class="form-action">DEFAULT</button>
