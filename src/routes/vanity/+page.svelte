@@ -4,7 +4,7 @@
 
 	let prefix = $state('');
 	let suffix = $state('');
-	let maxTries = $state(1_000_000);
+	let maxTries = $state(10_000_000);
 	const defaultThreads = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8;
 	let threads = $state(defaultThreads);
 	let running = $state(false);
@@ -221,7 +221,7 @@
 			autocomplete="off"
 			class="form-input"
 		/>
-		<button onclick={() => maxTries = 1_000_000} disabled={running} class="form-action">DEFAULT</button>
+		<button onclick={() => maxTries = 10_000_000} disabled={running} class="form-action">DEFAULT</button>
 	</div>
 
 	<div class="form-row">
