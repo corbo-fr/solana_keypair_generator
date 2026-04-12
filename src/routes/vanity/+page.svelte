@@ -5,10 +5,14 @@
 	let prefix = $state('');
 	let suffix = $state('');
 	let maxTries = $state(10_000_000);
+	let maxTime = $state(10);
 	const defaultThreads = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8;
 	let threads = $state(defaultThreads);
 	let running = $state(false);
 	let tries = $state(0);
+	let startTime = $state(0);
+	let elapsed = $state(0);
+	let timerInterval: ReturnType<typeof setInterval> | null = null;
 	let result: { address: string; privateKey: string } | null = $state(null);
 	let preview: { address: string; privateKey: string } | null = $state(null);
 	let bestScore = $state(0);
@@ -39,7 +43,15 @@
 		return null;
 	}
 
+	function stopTimer() {
+		if (timerInterval) {
+			clearInterval(timerInterval);
+			timerInterval = null;
+		}
+	}
+
 	function terminateAll() {
+		stopTimer();
 		for (const w of workers) {
 			w.terminate();
 		}
@@ -66,8 +78,17 @@
 		preview = null;
 		bestScore = 0;
 		tries = 0;
+		elapsed = 0;
+		startTime = Date.now();
 		running = true;
 		showMatchColors = true;
+
+		timerInterval = setInterval(() => {
+			elapsed = (Date.now() - startTime) / 1000;
+			if (elapsed >= maxTime * 60) {
+				for (const w of workers) w.postMessage({ type: 'stop' });
+			}
+		}, 200);
 
 		const threadCount = threads;
 		let finishedCount = 0;
@@ -108,8 +129,9 @@
 
 				if (data.type === 'found') {
 					workerTries[i] = data.tries;
+					elapsed = (Date.now() - startTime) / 1000;
 					result = data.result;
-					finish({ message: `Found in ${workerTries.reduce((a, b) => a + b, 0).toLocaleString()} tries`, type: 'success' });
+					finish({ message: `Found in ${workerTries.reduce((a, b) => a + b, 0).toLocaleString()} tries (${Math.floor(elapsed / 60)}m ${Math.floor(elapsed % 60)}s)`, type: 'success' });
 				}
 
 				if (data.type === 'stopped' || data.type === 'error') {
@@ -129,11 +151,13 @@
 					}
 
 					if (finishedCount >= threadCount) {
+						elapsed = (Date.now() - startTime) / 1000;
 						const totalTries = workerTries.reduce((a, b) => a + b, 0);
-						if (totalTries >= maxTries) {
-							finish({ message: `No match after ${totalTries.toLocaleString()} tries`, type: 'error' });
+						const timeStr = `${Math.floor(elapsed / 60)}m ${Math.floor(elapsed % 60)}s`;
+						if (totalTries >= maxTries || elapsed >= maxTime * 60) {
+							finish({ message: `No match after ${totalTries.toLocaleString()} tries (${timeStr})`, type: 'error' });
 						} else {
-							finish({ message: `Stopped after ${totalTries.toLocaleString()} tries`, type: 'warning' });
+							finish({ message: `Stopped after ${totalTries.toLocaleString()} tries (${timeStr})`, type: 'warning' });
 						}
 					}
 				}
@@ -229,9 +253,23 @@
 	</div>
 
 	<div class="form-row">
+		<label class="form-label">MAX TIME</label>
+		<input
+			type="number"
+			bind:value={maxTime}
+			min={1}
+			step={1}
+			disabled={running}
+			autocomplete="off"
+			class="form-input"
+		/>
+		<button onclick={() => maxTime = 10} disabled={running} class="form-action">DEFAULT</button>
+	</div>
+
+	<div class="form-row">
 		{#if running}
 			<button onclick={stop} class="form-action-left text-error">STOP</button>
-			<span class="flex-1 px-2 py-1 flex justify-between" style="background:linear-gradient(to right, var(--color-base-200) {Math.min(100, (tries / maxTries) * 100)}%, transparent {Math.min(100, (tries / maxTries) * 100)}%)"><span class="opacity-70">{tries.toLocaleString()} TRIES...</span><span class="opacity-70">{bestScore}/{prefix.length + suffix.length}</span></span>
+			<span class="flex-1 px-2 py-1 flex justify-between" style="background:linear-gradient(to right, var(--color-base-200) {Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%, transparent {Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%)"><span class="opacity-70">{tries.toLocaleString()} TRIES...</span><span class="opacity-70">{Math.floor(elapsed / 60)}m {Math.floor(elapsed % 60)}s</span></span>
 			<button onclick={stop} class="form-action text-error">STOP</button>
 		{:else}
 			<button onclick={generate} class="form-action-left">GENERATE</button>
