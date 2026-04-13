@@ -27,7 +27,7 @@
 
 	// --- Internal ---
 	let workers: Worker[] = [];
-	let workerTries: number[] = [];
+	let workerTries: number[] = $state([]);
 	let startTime = 0;
 	let timerInterval: ReturnType<typeof setInterval> | null = null;
 	let finishedCount = 0;
@@ -60,6 +60,15 @@
 
 	let totalTarget = $derived((prefix.length || 0) + (suffix.length || 0));
 	let totalMatched = $derived(prefixMatched + suffixMatched);
+
+	let threadHeights = $derived.by(() => {
+		if (workerTries.length === 0) return [];
+		const min = Math.min(...workerTries);
+		const max = Math.max(...workerTries);
+		const range = max - min;
+		if (range === 0) return workerTries.map(() => 100);
+		return workerTries.map((t) => ((t - min) / range) * 100);
+	});
 
 	// --- Helpers ---
 	function formatTime(seconds: number): string {
@@ -306,6 +315,11 @@
 			autocomplete="off"
 			class="form-input"
 		/>
+		<span class="w-28 shrink-0 border-l border-base-300 flex items-end {threadHeights.length ? '' : 'opacity-40'}">
+			{#each threadHeights as h}
+				<div class="flex-1 bg-primary transition-all duration-150 ease-out" style="height:{h}%"></div>
+			{/each}
+		</span>
 		<button onclick={() => threads = defaultThreads} disabled={running} class="form-action">AVAILABLE</button>
 	</div>
 
