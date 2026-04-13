@@ -139,7 +139,7 @@ body * {
 
 /* Page title — fixed-width left cell */
 .page-title {
-  @apply shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 font-bold;
+  @apply shrink-0 min-w-44 px-2 py-1 uppercase tracking-widest border-r border-base-300 font-bold;
 }
 
 /* Page description — fills remaining space */

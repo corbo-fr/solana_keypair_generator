@@ -21,6 +21,28 @@
 		return w.label ? `"${w.label}" (${shortKey(w.publicKey)})` : shortKey(w.publicKey);
 	}
 
+	function coloredShortKey(w: WalletEntry): string {
+		const short = shortKey(w.publicKey);
+		const pLen = w.prefix?.length ?? 0;
+		const sLen = w.suffix?.length ?? 0;
+		if (!pLen && !sLen) return short;
+		// short = "XXXX...XXXX" — 4 start chars + "..." + 4 end chars
+		const startLen = 4;
+		const endLen = 4;
+		const ellipsis = '...';
+		const start = short.slice(0, startLen);
+		const end = short.slice(-endLen);
+		const pClamped = Math.min(pLen, startLen);
+		const sClamped = Math.min(sLen, endLen);
+		const coloredStart = pClamped > 0
+			? `<span class="text-success">${start.slice(0, pClamped)}</span>${start.slice(pClamped)}`
+			: start;
+		const coloredEnd = sClamped > 0
+			? `${end.slice(0, endLen - sClamped)}<span class="text-success">${end.slice(endLen - sClamped)}</span>`
+			: end;
+		return coloredStart + ellipsis + coloredEnd;
+	}
+
 	// --- Persist on change ---
 	$effect(() => {
 		saveInputs('home', { publicKeyInput, privateKeyInput });
@@ -188,16 +210,9 @@
 	<!-- Wallet list -->
 	{#each wallets as wallet, i}
 		<div class="form-row">
-			<label class="form-label">
+			<label class="form-label truncate">
 				<span class="opacity-30 font-normal normal-case tracking-normal mr-2">#{i + 1}</span>
-				{#if wallet.prefix}
-					<span class="text-success">{wallet.publicKey.slice(0, wallet.prefix.length)}</span>{shortKey(wallet.publicKey.slice(wallet.prefix.length), Math.max(0, 4 - wallet.prefix.length), wallet.suffix ? 0 : 4)}
-				{:else}
-					{shortKey(wallet.publicKey, 4, wallet.suffix ? 0 : 4)}
-				{/if}
-				{#if wallet.suffix}
-					{#if !wallet.prefix}...{/if}<span class="text-success">{wallet.publicKey.slice(-wallet.suffix.length)}</span>
-				{/if}
+				<span class="normal-case tracking-normal">{@html coloredShortKey(wallet)}</span>
 			</label>
 			<input type="text" value={wallet.label ?? ''} oninput={(e) => onLabelInput(i, (e.target as HTMLInputElement).value)} placeholder="label" autocomplete="off" class="form-input" />
 			<div class="w-22 shrink-0 flex border-l border-base-300">
