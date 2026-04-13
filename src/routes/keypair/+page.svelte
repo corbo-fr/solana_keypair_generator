@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
+	import MarqueeText from '$lib/components/MarqueeText.svelte';
 	import { shortKey } from '$lib/format';
 	import { entropyToMnemonic } from '@scure/bip39';
 	import { wordlist } from '@scure/bip39/wordlists/english.js';
@@ -165,6 +166,8 @@
 		const len = points.length;
 		const stepX = len === 1 ? 0 : w / (len - 1);
 		const getY = (i: number) => range === 0 ? h / 2 : h - ((points[i] - min) / range) * (h - 4) - 2;
+		const strokeColor = 'oklch(0.637 0.237 25.331)';
+		const fillColor = 'rgba(239, 68, 68, 0.12)';
 		// build path + fill
 		ctx.beginPath();
 		for (let i = 0; i < len; i++) {
@@ -175,7 +178,7 @@
 		ctx.lineTo(len === 1 ? w / 2 : (len - 1) * stepX, h);
 		ctx.lineTo(len === 1 ? w / 2 : 0, h);
 		ctx.closePath();
-		ctx.fillStyle = 'rgba(239, 68, 68, 0.12)';
+		ctx.fillStyle = fillColor;
 		ctx.fill();
 		// draw line
 		ctx.beginPath();
@@ -184,7 +187,7 @@
 			if (i === 0) ctx.moveTo(x, getY(i));
 			else ctx.lineTo(x, getY(i));
 		}
-		ctx.strokeStyle = 'oklch(0.637 0.237 25.331)';
+		ctx.strokeStyle = strokeColor;
 		ctx.lineWidth = 1;
 		ctx.stroke();
 	}
@@ -356,12 +359,7 @@
 <div class="flex flex-col">
 	<h1 class="page-title">KEYPAIR GENERATION</h1>
 
-	<div class="page-description">
-		Generate a Solana address that starts or ends with specific characters.
-		Brute-forces random keypairs until a match is found. Longer patterns take
-		exponentially more tries. Valid characters are base58:
-		1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l).
-	</div>
+	<MarqueeText text="Generate a Solana address that starts or ends with specific characters. Brute-forces random keypairs until a match is found. Longer patterns take exponentially more tries. Valid characters are base58: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l)." />
 
 	<div class="form-row">
 		<label class="form-label"><span>PREFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
