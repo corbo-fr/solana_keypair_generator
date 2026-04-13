@@ -9,7 +9,7 @@
 	// --- Form inputs ---
 	let prefix = $state('');
 	let suffix = $state('');
-	let maxTries = $state(10_000_000);
+	let maxTries = $state(100_000_000);
 	let maxTime = $state(10);
 	let threads = $state(defaultThreads);
 
@@ -127,7 +127,7 @@
 		if (data.type === 'found') {
 			workerTries[workerIndex] = data.tries;
 			result = data.result;
-			finish({ message: `Found in ${totalTries().toLocaleString()} tries (${formatTime((Date.now() - startTime) / 1000)})`, type: 'success' });
+			finish({ message: '', type: 'success' });
 			return;
 		}
 
@@ -148,11 +148,10 @@
 			if (finishedCount < workers.length) return;
 
 			const t = totalTries();
-			const time = formatTime((Date.now() - startTime) / 1000);
 			if (t >= maxTries || (Date.now() - startTime) / 1000 >= maxTime * 60) {
-				finish({ message: `No match after ${t.toLocaleString()} tries (${time})`, type: 'error' });
+				finish({ message: '', type: 'error' });
 			} else {
-				finish({ message: `Stopped after ${t.toLocaleString()} tries (${time})`, type: 'warning' });
+				finish({ message: '', type: 'warning' });
 			}
 		}
 	}
@@ -201,7 +200,7 @@
 </script>
 
 <div class="flex flex-col">
-	<h1 class="page-title">VANITY ADDRESS</h1>
+	<h1 class="page-title">KEYPAIR GENERATION</h1>
 
 	<div class="page-description">
 		Generate a Solana address that starts or ends with specific characters.
@@ -267,7 +266,7 @@
 			autocomplete="off"
 			class="form-input"
 		/>
-		<button onclick={() => maxTries = 10_000_000} disabled={running} class="form-action">DEFAULT</button>
+		<button onclick={() => maxTries = 100_000_000} disabled={running} class="form-action">DEFAULT</button>
 	</div>
 
 	<div class="form-row">
@@ -302,13 +301,12 @@
 
 	<div class="form-row">
 		<button onclick={generate} disabled={running} class="form-action-left {running ? '' : 'animate-pulse'}">GENERATE</button>
-		{#if running}
-			<span class="flex-1 px-2 py-1 opacity-70">{tries.toLocaleString()} TRIES...</span>
-		{:else}
-			<span class="flex-1 px-2 py-1 {status ? (status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success') : ''}">{status?.message ?? ''}</span>
-		{/if}
+		<span class="flex-1 px-2 py-1 relative overflow-hidden {status?.message && tries === 0 && !running ? 'text-error' : (running || tries > 0 ? 'opacity-70' : 'opacity-40')}">
+			{#if running || tries > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, tries / maxTries * 100)}%"></div>{/if}
+			<span class="relative">{status?.message && tries === 0 && !running ? status.message : `${tries.toLocaleString()} ${tries === 1 ? 'try' : 'tries'}`}</span>
+		</span>
 		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {running || elapsed > 0 ? 'opacity-70' : 'opacity-40'} relative overflow-hidden">
-			{#if running}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, Math.max((tries / maxTries) * 100, (elapsed / (maxTime * 60)) * 100))}%"></div>{/if}
+			{#if running || elapsed > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, elapsed / (maxTime * 60) * 100)}%"></div>{/if}
 			<span class="relative">{formatTime(elapsed)}</span>
 		</span>
 		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'animate-pulse' : ''}">STOP</button>

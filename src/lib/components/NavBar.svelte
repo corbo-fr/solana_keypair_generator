@@ -3,10 +3,9 @@
 
 	const pages = [
 		{ label: 'WALLET', href: '/' },
-		{ label: 'VANITY', href: '/vanity' },
+		{ label: 'KEYPAIR', href: '/keypair' },
 		{ label: 'TRANSFER', href: '/transfer' },
 		{ label: 'TOKENS', href: '/tokens' },
-		{ label: 'KEYPAIR', href: '/keypair' },
 		{ label: 'AIRDROP', href: '/airdrop' }
 	];
 </script>
