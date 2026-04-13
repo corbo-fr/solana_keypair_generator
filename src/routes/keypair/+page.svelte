@@ -484,26 +484,26 @@
 
 	<div class="form-row">
 		<label class="form-label"><span>PUBLIC KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">b58</span></label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''}">{#if showMatchColors && displayAddress}{#each displayAddress.slice(0, addrStartLen).split('') as char, i}{#if prefix && i < prefix.length && char === prefix[i]}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}...{#each displayAddress.slice(-addrEndLen).split('') as char, i}{@const realIndex = displayAddress.length - addrEndLen + i}{#if suffix && realIndex >= displayAddress.length - suffix.length && char === suffix[realIndex - (displayAddress.length - suffix.length)]}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}{:else}{displayAddress ? shortKey(displayAddress, addrStartLen, addrEndLen) : ''}{/if}</span>
+		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{#if showMatchColors && displayAddress}{#each displayAddress.slice(0, addrStartLen).split('') as char, i}{#if prefix && i < prefix.length && char === prefix[i]}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}...{#each displayAddress.slice(-addrEndLen).split('') as char, i}{@const realIndex = displayAddress.length - addrEndLen + i}{#if suffix && realIndex >= displayAddress.length - suffix.length && char === suffix[realIndex - (displayAddress.length - suffix.length)]}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}{:else}{displayAddress ? shortKey(displayAddress, addrStartLen, addrEndLen) : ''}{/if}</span>
 		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && totalTarget ? (!running && result ? 'text-success' : !running && !result && status ? 'text-error' : '') : 'opacity-40'}">
 			{#if showMatchColors && totalTarget}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{totalMatched / totalTarget * 100}%"></div>{/if}
 			<span class="relative">{showMatchColors && totalTarget ? totalMatched : 0}/{totalTarget || 0}</span>
 		</span>
-		<button onclick={() => navigator.clipboard.writeText(displayAddress)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
+		<button onclick={() => navigator.clipboard.writeText(displayAddress)} disabled={!result && (running || !preview)} class="form-action !text-success {result || (!running && preview) ? 'marching-border' : ''}">COPY</button>
 	</div>
 	<div class="form-row">
 		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">b58</span></label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''}">{displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(displayPrivateKey)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
+		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(displayPrivateKey)} disabled={!result && (running || !preview)} class="form-action !text-success {result || (!running && preview) ? 'marching-border' : ''}">COPY</button>
 	</div>
 	<div class="form-row">
 		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">w24</span></label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''}">{displayMnemonic ? '*** *** *** *** ...' : ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(displayMnemonic)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
+		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{displayMnemonic ? '*** *** *** *** ...' : ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(displayMnemonic)} disabled={!result && (running || !preview)} class="form-action !text-success {result || (!running && preview) ? 'marching-border' : ''}">COPY</button>
 	</div>
 	<div class="form-row">
 		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">arr</span></label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''}">{displayArray ? '[****,****,****,...]' : ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(displayArray)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
+		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{displayArray ? '[****,****,****,...]' : ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(displayArray)} disabled={!result && (running || !preview)} class="form-action !text-success {result || (!running && preview) ? 'marching-border' : ''}">COPY</button>
 	</div>
 </div>
