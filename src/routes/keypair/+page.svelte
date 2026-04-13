@@ -78,7 +78,6 @@
 		let count = 0;
 		for (let i = 0; i < prefix.length; i++) {
 			if (displayAddress[i] === prefix[i]) count++;
-			else break;
 		}
 		return count;
 	});
@@ -89,7 +88,6 @@
 		for (let i = 0; i < suffix.length; i++) {
 			const ai = displayAddress.length - suffix.length + i;
 			if (ai >= 0 && displayAddress[ai] === suffix[i]) count++;
-			else break;
 		}
 		return count;
 	});
@@ -312,7 +310,7 @@
 		<ProgressCell
 			pct={prefix.length ? prefixMatched / prefix.length * 100 : 0}
 			show={!!(showMatchColors && prefix)}
-			class={showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : !running ? 'text-error' : '') : 'opacity-40'}
+			class={showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : !running ? 'text-error' : prefixMatched > 0 ? 'text-success' : '') : 'opacity-40'}
 		>
 			{showMatchColors && prefix ? prefixMatched : 0}/{prefix.length || 0}
 		</ProgressCell>
@@ -343,7 +341,7 @@
 		<ProgressCell
 			pct={suffix.length ? suffixMatched / suffix.length * 100 : 0}
 			show={!!(showMatchColors && suffix)}
-			class={showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : !running ? 'text-error' : '') : 'opacity-40'}
+			class={showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : !running ? 'text-error' : suffixMatched > 0 ? 'text-success' : '') : 'opacity-40'}
 		>
 			{showMatchColors && suffix ? suffixMatched : 0}/{suffix.length || 0}
 		</ProgressCell>
@@ -450,7 +448,7 @@
 		<ProgressCell
 			pct={totalTarget ? totalMatched / totalTarget * 100 : 0}
 			show={!!(showMatchColors && totalTarget)}
-			class={showMatchColors && totalTarget ? (!running && result ? 'text-success' : !running && !result && status ? 'text-error' : '') : 'opacity-40'}
+			class={showMatchColors && totalTarget ? (!running && result ? 'text-success' : !running && !result && status ? 'text-error' : totalMatched > 0 ? 'text-success' : '') : 'opacity-40'}
 		>
 			{showMatchColors && totalTarget ? totalMatched : 0}/{totalTarget || 0}
 		</ProgressCell>

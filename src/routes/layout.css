@@ -1,5 +1,7 @@
 @import 'tailwindcss';
-@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/forms' {
+  strategy: base;
+}
 @plugin '@tailwindcss/typography';
 @plugin "daisyui" {
   themes: solbox --default;
@@ -55,6 +57,14 @@
 /* No margin/padding on containers — borders are the only separators */
 * {
   border-radius: 0 !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border-color: inherit !important;
 }
 
 body {
