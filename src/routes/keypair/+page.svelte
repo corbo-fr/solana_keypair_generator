@@ -279,7 +279,7 @@
 		/>
 		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {running || tries > 0 ? 'opacity-70' : 'opacity-40'}">
 			{#if running || tries > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, tries / maxTries * 100)}%"></div>{/if}
-			<span class="relative">{tries.toLocaleString()}</span>
+			<span class="relative">{Math.min(100, Math.floor(tries / maxTries * 100))}%</span>
 		</span>
 		<button onclick={() => maxTries = 100_000_000} disabled={running} class="form-action">DEFAULT</button>
 	</div>
