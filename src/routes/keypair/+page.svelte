@@ -8,18 +8,26 @@
 	import { wordlist } from '@scure/bip39/wordlists/english.js';
 	import { getBase58Encoder } from '@solana/kit';
 	import { loadWallets, saveWallets } from '$lib/wallets';
-	import DiagonalStripes from '$lib/components/DiagonalStripes.svelte';
+	import DiagonalStripesSeparator from '$lib/components/DiagonalStripesSeparator.svelte';
+	import { loadInputs, saveInputs } from '$lib/persist';
 
 	// --- Constants ---
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 	const defaultThreads = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8;
 
 	// --- Form inputs ---
-	let prefix = $state('');
-	let suffix = $state('');
-	let maxTries = $state(100_000_000);
-	let maxTime = $state(10);
-	let threads = $state(defaultThreads);
+	const savedInputs = loadInputs('keypair', {
+		prefix: '',
+		suffix: '',
+		maxTries: 100_000_000,
+		maxTime: 10,
+		threads: defaultThreads
+	});
+	let prefix = $state(savedInputs.prefix);
+	let suffix = $state(savedInputs.suffix);
+	let maxTries = $state(savedInputs.maxTries);
+	let maxTime = $state(savedInputs.maxTime);
+	let threads = $state(savedInputs.threads);
 
 	// --- Generation state ---
 	let running = $state(false);
@@ -51,6 +59,11 @@
 	let timerInterval: ReturnType<typeof setInterval> | null = null;
 	let finishedCount = 0;
 	let done = false;
+
+	// --- Persist inputs ---
+	$effect(() => {
+		saveInputs('keypair', { prefix, suffix, maxTries, maxTime, threads });
+	});
 
 	// --- Derived ---
 	let tries = $derived(workerTries.reduce((a, b) => a + b, 0));
@@ -310,6 +323,8 @@
 		<MarqueeText text="Generate a Solana address that starts or ends with specific characters. Brute-forces random keypairs until a match is found. Longer patterns take exponentially more tries. Valid characters are base58: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l)." />
 	</div>
 
+	<DiagonalStripesSeparator />
+
 	<div class="form-row">
 		<label class="form-label"><span>PREFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
@@ -370,6 +385,8 @@
 		</ProgressCell>
 		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
+
+	<DiagonalStripesSeparator />
 
 	<div class="form-row">
 		<label class="form-label">MAX TRIES</label>
@@ -438,7 +455,7 @@
 		<button onclick={() => threads = defaultThreads} disabled={running} class="form-action">AVAILABLE</button>
 	</div>
 
-	<DiagonalStripes />
+	<DiagonalStripesSeparator />
 
 	<div class="form-row">
 		<button onclick={generate} disabled={running} class="form-action-left {running ? '' : 'marching-border'}">GENERATE</button>
@@ -456,7 +473,7 @@
 		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'marching-border' : ''}">STOP</button>
 	</div>
 
-	<DiagonalStripes />
+	<DiagonalStripesSeparator />
 
 	<div class="form-row">
 		<label class="form-label"><span>PUBLIC KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">b58</span></label>

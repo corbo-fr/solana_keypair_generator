@@ -1,22 +1,27 @@
 <script lang="ts">
 	import MarqueeText from '$lib/components/MarqueeText.svelte';
-	import DiagonalStripes from '$lib/components/DiagonalStripes.svelte';
+	import DiagonalStripesSeparator from '$lib/components/DiagonalStripesSeparator.svelte';
 	import { loadWallets, saveWallets, type Wallet } from '$lib/wallets';
 	import { shortKey } from '$lib/format';
 	import { Keypair } from '@solana/web3.js';
 	import { getBase58Decoder } from '@solana/kit';
+	import { loadInputs, saveInputs } from '$lib/persist';
 
 	// --- State ---
+	const savedInputs = loadInputs('home', { publicKeyInput: '', privateKeyInput: '' });
 	let wallets = $state<Wallet[]>(loadWallets());
 	let fileInput: HTMLInputElement;
-	let publicKeyInput = $state('');
-	let privateKeyInput = $state('');
+	let publicKeyInput = $state(savedInputs.publicKeyInput);
+	let privateKeyInput = $state(savedInputs.privateKeyInput);
 	type Status = { message: string; type: 'error' | 'warning' | 'success' };
 	let status = $state<Status | null>(null);
 
 	// --- Persist on change ---
 	$effect(() => {
 		saveWallets(wallets);
+	});
+	$effect(() => {
+		saveInputs('home', { publicKeyInput, privateKeyInput });
 	});
 
 	// --- Move ---
@@ -128,30 +133,25 @@
 		<MarqueeText text="Manage your Solana keypairs locally. Generate, import/export as JSON, add or remove wallets. Everything is stored in your browser's localStorage — nothing leaves your machine." />
 	</div>
 
+	<DiagonalStripesSeparator />
+
 	<!-- Import / Export -->
 	<div class="form-row">
-		<button onclick={importJson} class="form-action-left">IMPORT BATCH</button>
+		<button onclick={importJson} class="form-action-left">IMPORT</button>
 		<span class="form-value opacity-40">{wallets.length} wallet{wallets.length !== 1 ? 's' : ''}</span>
+		<button onclick={() => { wallets = []; }} disabled={wallets.length === 0} class="form-action !text-error border-r-0">RESET</button>
 		<button onclick={exportJson} disabled={wallets.length === 0} class="form-action">EXPORT</button>
 	</div>
 
-	<DiagonalStripes />
+	<DiagonalStripesSeparator />
 
-	<!-- Import wallet -->
+	<!-- Generate wallet -->
 	<div class="form-row">
-		<button onclick={addWallet} class="form-action-left">IMPORT WALLET</button>
+		<button onclick={addWallet} class="form-action-left border-r-0">IMPORT</button>
+		<button onclick={generateWallet} class="form-action-left">GENERATE</button>
 		<div class="flex-1 border-r border-base-300"><input type="text" bind:value={publicKeyInput} placeholder="public key" autocomplete="off" class="form-input w-full" /></div>
 		<div class="flex-1"><input type="password" bind:value={privateKeyInput} placeholder="private key" autocomplete="off" class="form-input w-full" /></div>
 		<button onclick={addWallet} class="form-action">ADD</button>
-	</div>
-
-	<DiagonalStripes />
-
-	<!-- Generate / Delete all -->
-	<div class="form-row">
-		<button onclick={generateWallet} class="form-action-left">GENERATE</button>
-		<span class="form-value"></span>
-		<button onclick={() => { wallets = []; }} disabled={wallets.length === 0} class="form-action !text-error">DELETE ALL</button>
 	</div>
 
 	<!-- Wallet list -->
