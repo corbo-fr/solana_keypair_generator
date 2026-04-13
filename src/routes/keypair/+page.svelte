@@ -330,6 +330,27 @@
 		importStatus = { message: `Imported (${newWallets.length} total).`, type: 'success' };
 	}
 
+	function exportWalletJson() {
+		if (!result) return;
+		let mnemonic: string | undefined;
+		let byteArray: string | undefined;
+		try {
+			const bytes = getBase58Encoder().encode(result!.privateKey);
+			mnemonic = entropyToMnemonic(bytes.slice(0, 32), wordlist);
+			byteArray = '[' + Array.from(bytes).join(',') + ']';
+		} catch { /* ignore */ }
+		const entry = {
+			publicKey: result!.address,
+			privateKey: result!.privateKey,
+			...(mnemonic ? { mnemonic } : {}),
+			...(byteArray ? { byteArray } : {}),
+			...(prefix ? { prefix } : {}),
+			...(suffix ? { suffix } : {}),
+		};
+		navigator.clipboard.writeText(JSON.stringify([entry], null, 2));
+		importStatus = { message: 'Exported to clipboard.', type: 'success' };
+	}
+
 	onDestroy(terminateAll);
 </script>
 
@@ -530,5 +551,6 @@
 				<span class={importStatus.type === 'error' ? 'text-error' : 'text-success'}>{importStatus.message}</span>
 			{/if}
 		</span>
+		<button onclick={exportWalletJson} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">EXPORT</button>
 	</div>
 </div>
