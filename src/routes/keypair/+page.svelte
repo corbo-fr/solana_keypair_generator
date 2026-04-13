@@ -103,7 +103,6 @@
 		}
 		for (const w of workers) w.terminate();
 		workers = [];
-		workerTries = [];
 	}
 
 	function stopWorkers() {
@@ -316,10 +315,14 @@
 			autocomplete="off"
 			class="form-input"
 		/>
-		<span class="w-28 shrink-0 border-l border-base-300 flex items-end {threadHeights.length ? '' : 'opacity-40'}">
-			{#each threadHeights as h}
-				<div class="flex-1 bg-primary transition-all duration-150 ease-out" style="height:{h}%"></div>
-			{/each}
+		<span class="w-28 shrink-0 border-l border-base-300 flex items-end">
+			{#if threadHeights.length}
+				{#each threadHeights as h}
+					<div class="flex-1 {running ? 'bg-primary' : 'bg-base-200'} transition-all duration-150 ease-out" style="height:{h}%"></div>
+				{/each}
+			{:else}
+				<div class="flex-1 bg-base-200 transition-all duration-150 ease-out" style="height:50%"></div>
+			{/if}
 		</span>
 		<button onclick={() => threads = defaultThreads} disabled={running} class="form-action">AVAILABLE</button>
 	</div>
