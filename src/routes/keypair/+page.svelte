@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { onDestroy, tick } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import MarqueeText from '$lib/components/MarqueeText.svelte';
+	import ProgressCell from './ProgressCell.svelte';
+	import PerfGraph from './PerfGraph.svelte';
 	import { shortKey } from '$lib/format';
 	import { entropyToMnemonic } from '@scure/bip39';
 	import { wordlist } from '@scure/bip39/wordlists/english.js';
@@ -9,7 +11,6 @@
 	// --- Constants ---
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 	const defaultThreads = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8;
-	const MAX_GRAPH_POINTS = 300;
 
 	// --- Form inputs ---
 	let prefix = $state('');
@@ -20,7 +21,6 @@
 
 	// --- Generation state ---
 	let running = $state(false);
-	let tries = $state(0);
 	let elapsed = $state(0);
 	let bestScore = $state(0);
 	let showMatchColors = $state(false);
@@ -41,7 +41,6 @@
 	let perfSamples: number[] = [];
 	let prevTries = 0;
 	let perfInterval: ReturnType<typeof setInterval> | null = null;
-	let perfCanvas: HTMLCanvasElement | undefined = $state();
 
 	// --- Internal ---
 	let workers: Worker[] = [];
@@ -52,6 +51,7 @@
 	let done = false;
 
 	// --- Derived ---
+	let tries = $derived(workerTries.reduce((a, b) => a + b, 0));
 	let displayAddress = $derived(result?.address ?? preview?.address ?? '');
 	let displayPrivateKey = $derived(result?.privateKey ?? preview?.privateKey ?? '');
 	let addrStartLen = $derived(Math.max(4, prefix.length + 4));
@@ -78,6 +78,7 @@
 		let count = 0;
 		for (let i = 0; i < prefix.length; i++) {
 			if (displayAddress[i] === prefix[i]) count++;
+			else break;
 		}
 		return count;
 	});
@@ -88,6 +89,7 @@
 		for (let i = 0; i < suffix.length; i++) {
 			const ai = displayAddress.length - suffix.length + i;
 			if (ai >= 0 && displayAddress[ai] === suffix[i]) count++;
+			else break;
 		}
 		return count;
 	});
@@ -104,24 +106,22 @@
 		return workerTries.map((t) => ((t - min) / range) * 100);
 	});
 
+	let privateKeyFormats = $derived([
+		{ label: 'b58', display: displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : '', value: displayPrivateKey },
+		{ label: 'w24', display: displayMnemonic ? '*** *** *** *** ...' : '', value: displayMnemonic },
+		{ label: 'arr', display: displayArray ? '[****,****,****,...]' : '', value: displayArray },
+	]);
+
 	// --- Helpers ---
-	// Format seconds into "Xm Xs" or "Xh Xm" for display
 	function formatTime(seconds: number): string {
 		if (seconds >= 3600) return `${Math.floor(seconds / 3600)}h ${Math.floor(seconds % 3600 / 60)}m`;
 		return `${Math.floor(seconds / 60)}m ${Math.floor(seconds % 60)}s`;
 	}
 
-	// Sum of all worker tries across threads
-	function totalTries(): number {
-		return workerTries.reduce((a, b) => a + b, 0);
-	}
-
-	// Check if every character in the string is a valid base58 character
 	function isValidBase58(str: string): boolean {
 		return [...str].every((c) => BASE58_CHARS.includes(c));
 	}
 
-	// Validate form inputs, returns error message or null if valid
 	function validate(): string | null {
 		if (prefix && !isValidBase58(prefix)) return 'Prefix contains invalid base58 characters.';
 		if (suffix && !isValidBase58(suffix)) return 'Suffix contains invalid base58 characters.';
@@ -129,72 +129,13 @@
 		return null;
 	}
 
-	// Reset match color overlay when user edits prefix/suffix
 	function clearMatchColors() {
 		showMatchColors = false;
 	}
 
-	// --- Performance graph ---
-	// Reduce data points to MAX_GRAPH_POINTS by averaging equal-sized groups
-	function downsample(data: number[]): number[] {
-		if (data.length <= MAX_GRAPH_POINTS) return data;
-		const k = Math.ceil(data.length / MAX_GRAPH_POINTS);
-		const result: number[] = [];
-		for (let i = 0; i < data.length; i += k) {
-			const chunk = data.slice(i, i + k);
-			result.push(chunk.reduce((a, b) => a + b, 0) / chunk.length);
-		}
-		return result;
-	}
-
-	// Redraw the gen/s canvas: red filled area under the curve + red stroke line
-	function drawPerfGraph() {
-		if (!perfCanvas) return;
-		const ctx = perfCanvas.getContext('2d');
-		if (!ctx) return;
-		const w = perfCanvas.clientWidth;
-		const h = perfCanvas.clientHeight;
-		perfCanvas.width = w;
-		perfCanvas.height = h;
-		ctx.clearRect(0, 0, w, h);
-		const raw = running ? [...genPerSecHistory, currentGenPerSec] : genPerSecHistory;
-		if (raw.length < 1) return;
-		const points = downsample(raw);
-		const min = Math.min(...points);
-		const max = Math.max(...points);
-		const range = max - min;
-		const len = points.length;
-		const stepX = len === 1 ? 0 : w / (len - 1);
-		const getY = (i: number) => range === 0 ? h / 2 : h - ((points[i] - min) / range) * (h - 4) - 2;
-		const strokeColor = 'oklch(0.637 0.237 25.331)';
-		const fillColor = 'rgba(239, 68, 68, 0.12)';
-		// build path + fill
-		ctx.beginPath();
-		for (let i = 0; i < len; i++) {
-			const x = len === 1 ? w / 2 : i * stepX;
-			if (i === 0) ctx.moveTo(x, getY(i));
-			else ctx.lineTo(x, getY(i));
-		}
-		ctx.lineTo(len === 1 ? w / 2 : (len - 1) * stepX, h);
-		ctx.lineTo(len === 1 ? w / 2 : 0, h);
-		ctx.closePath();
-		ctx.fillStyle = fillColor;
-		ctx.fill();
-		// draw line
-		ctx.beginPath();
-		for (let i = 0; i < len; i++) {
-			const x = len === 1 ? w / 2 : i * stepX;
-			if (i === 0) ctx.moveTo(x, getY(i));
-			else ctx.lineTo(x, getY(i));
-		}
-		ctx.strokeStyle = strokeColor;
-		ctx.lineWidth = 1;
-		ctx.stroke();
-	}
-
-	// Called every PERF_STEP_MS: records tries delta, computes rolling gen/s average over PERF_WINDOW_MS, and saves a history point every full window
+	// --- Performance sampling ---
 	function samplePerf() {
-		const current = totalTries();
+		const current = tries;
 		if (prevTries === 0 && perfSamples.length === 0) {
 			prevTries = current;
 			return;
@@ -203,12 +144,10 @@
 		prevTries = current;
 		perfSamples.push(diff);
 
-		// compute gen/s as sum of samples over the window (last PERF_SAMPLES_PER_WINDOW steps)
 		const windowSamples = perfSamples.slice(-PERF_SAMPLES_PER_WINDOW);
 		const genPerSec = windowSamples.reduce((a, b) => a + b, 0) * (PERF_WINDOW_MS / PERF_STEP_MS) / windowSamples.length;
 		currentGenPerSec = Math.round(genPerSec);
 
-		// record a history point every full window
 		if (perfSamples.length % PERF_SAMPLES_PER_WINDOW === 0) {
 			genPerSecHistory.push(currentGenPerSec);
 			if (genPerSecHistory.length === 1) {
@@ -219,11 +158,9 @@
 				if (currentGenPerSec > maxGenPerSec) maxGenPerSec = currentGenPerSec;
 			}
 		}
-		drawPerfGraph();
 	}
 
 	// --- Worker lifecycle ---
-	// Kill all workers and clear all intervals
 	function terminateAll() {
 		if (timerInterval) {
 			clearInterval(timerInterval);
@@ -237,16 +174,13 @@
 		workers = [];
 	}
 
-	// Send graceful stop signal to all workers
 	function stopWorkers() {
 		for (const w of workers) w.postMessage({ type: 'stop' });
 	}
 
-	// Finalize generation: capture last perf sample, set status, and clean up
-	function finish(finalStatus: { message: string; type: 'error' | 'warning' | 'success' }) {
+	function finish(finalStatus: Status) {
 		if (done) return;
 		done = true;
-		tries = totalTries();
 		elapsed = (Date.now() - startTime) / 1000;
 		samplePerf();
 		status = finalStatus;
@@ -254,13 +188,11 @@
 		running = false;
 	}
 
-	// Route worker messages: progress updates, found match, errors, and graceful stop
 	function handleWorkerMessage(workerIndex: number, data: any) {
 		if (done) return;
 
 		if (data.type === 'progress') {
 			workerTries[workerIndex] = data.tries;
-			tries = totalTries();
 
 			if (data.bestScore > bestScore) {
 				bestScore = data.bestScore;
@@ -294,8 +226,7 @@
 			finishedCount++;
 			if (finishedCount < workers.length) return;
 
-			const t = totalTries();
-			if (t >= maxTries || (Date.now() - startTime) / 1000 >= maxTime * 60) {
+			if (tries >= maxTries || (Date.now() - startTime) / 1000 >= maxTime * 60) {
 				finish({ message: '', type: 'error' });
 			} else {
 				finish({ message: '', type: 'warning' });
@@ -304,7 +235,6 @@
 	}
 
 	// --- Actions ---
-	// Reset state and spawn worker threads to brute-force keypairs
 	function generate() {
 		const error = validate();
 		if (error) {
@@ -318,7 +248,6 @@
 		result = null;
 		preview = null;
 		bestScore = 0;
-		tries = 0;
 		elapsed = 0;
 		finishedCount = 0;
 		done = false;
@@ -328,6 +257,7 @@
 		currentGenPerSec = 0;
 		minGenPerSec = 0;
 		maxGenPerSec = 0;
+		workerTries = new Array(threads).fill(0);
 		startTime = Date.now();
 		running = true;
 		showMatchColors = true;
@@ -339,7 +269,6 @@
 
 		perfInterval = setInterval(samplePerf, PERF_STEP_MS);
 
-		workerTries = new Array(threads).fill(0);
 		for (let i = 0; i < threads; i++) {
 			const w = new Worker(new URL('./vanity-worker.ts', import.meta.url), { type: 'module' });
 			w.onmessage = (e) => handleWorkerMessage(i, e.data);
@@ -348,7 +277,6 @@
 		}
 	}
 
-	// User-triggered graceful stop
 	function stop() {
 		stopWorkers();
 	}
@@ -365,7 +293,11 @@
 		<label class="form-label"><span>PREFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
 			{#if showMatchColors && prefix && running}
-				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each prefix.split('') as char, i}{#if displayAddress && displayAddress[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
+				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">
+					{#each prefix.split('') as char, i}
+						{#if displayAddress && displayAddress[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}
+					{/each}
+				</span>
 			{/if}
 			<input
 				type="text"
@@ -377,10 +309,13 @@
 				class="form-input w-full {showMatchColors && prefix && running ? 'text-transparent caret-transparent' : showMatchColors && prefix && !running && result ? 'text-success' : ''}"
 			/>
 		</div>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : !running ? 'text-error' : '') : 'opacity-40'}">
-			{#if showMatchColors && prefix}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{prefixMatched / prefix.length * 100}%"></div>{/if}
-			<span class="relative">{showMatchColors && prefix ? prefixMatched : 0}/{prefix.length || 0}</span>
-		</span>
+		<ProgressCell
+			pct={prefix.length ? prefixMatched / prefix.length * 100 : 0}
+			show={!!(showMatchColors && prefix)}
+			class={showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : !running ? 'text-error' : '') : 'opacity-40'}
+		>
+			{showMatchColors && prefix ? prefixMatched : 0}/{prefix.length || 0}
+		</ProgressCell>
 		<button onclick={() => { prefix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
@@ -388,7 +323,12 @@
 		<label class="form-label"><span>SUFFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
 			{#if showMatchColors && suffix && running}
-				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each suffix.split('') as char, i}{@const addr = displayAddress}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
+				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">
+					{#each suffix.split('') as char, i}
+						{@const ai = displayAddress.length - suffix.length + i}
+						{#if displayAddress && ai >= 0 && displayAddress[ai] === char}<span class="text-success">{char}</span>{:else}{char}{/if}
+					{/each}
+				</span>
 			{/if}
 			<input
 				type="text"
@@ -400,10 +340,13 @@
 				class="form-input w-full {showMatchColors && suffix && running ? 'text-transparent caret-transparent' : showMatchColors && suffix && !running && result ? 'text-success' : ''}"
 			/>
 		</div>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : !running ? 'text-error' : '') : 'opacity-40'}">
-			{#if showMatchColors && suffix}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{suffixMatched / suffix.length * 100}%"></div>{/if}
-			<span class="relative">{showMatchColors && suffix ? suffixMatched : 0}/{suffix.length || 0}</span>
-		</span>
+		<ProgressCell
+			pct={suffix.length ? suffixMatched / suffix.length * 100 : 0}
+			show={!!(showMatchColors && suffix)}
+			class={showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : !running ? 'text-error' : '') : 'opacity-40'}
+		>
+			{showMatchColors && suffix ? suffixMatched : 0}/{suffix.length || 0}
+		</ProgressCell>
 		<button onclick={() => { suffix = ''; clearMatchColors(); }} disabled={running} class="form-action">CLEAN</button>
 	</div>
 
@@ -418,10 +361,13 @@
 			autocomplete="off"
 			class="form-input"
 		/>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {!running && !result && status ? 'text-error' : running || tries > 0 ? 'opacity-70' : 'opacity-40'}">
-			{#if running || tries > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, tries / maxTries * 100)}%"></div>{/if}
-			<span class="relative">{Math.min(100, Math.floor(tries / maxTries * 100))}%</span>
-		</span>
+		<ProgressCell
+			pct={Math.min(100, tries / maxTries * 100)}
+			show={running || tries > 0}
+			class={!running && !result && status ? 'text-error' : running || tries > 0 ? 'opacity-70' : 'opacity-40'}
+		>
+			{Math.min(100, Math.floor(tries / maxTries * 100))}%
+		</ProgressCell>
 		<button onclick={() => maxTries = 100_000_000} disabled={running} class="form-action">DEFAULT</button>
 	</div>
 
@@ -437,10 +383,13 @@
 			autocomplete="off"
 			class="form-input"
 		/>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {!running && !result && status ? 'text-error' : running || elapsed > 0 ? 'opacity-70' : 'opacity-40'}">
-			{#if running || elapsed > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, elapsed / (maxTime * 60) * 100)}%"></div>{/if}
-			<span class="relative">{formatTime(elapsed)}</span>
-		</span>
+		<ProgressCell
+			pct={Math.min(100, elapsed / (maxTime * 60) * 100)}
+			show={running || elapsed > 0}
+			class={!running && !result && status ? 'text-error' : running || elapsed > 0 ? 'opacity-70' : 'opacity-40'}
+		>
+			{formatTime(elapsed)}
+		</ProgressCell>
 		<button onclick={() => maxTime = 10} disabled={running} class="form-action">DEFAULT</button>
 	</div>
 
@@ -470,40 +419,49 @@
 
 	<div class="form-row">
 		<button onclick={generate} disabled={running} class="form-action-left {running ? '' : 'marching-border'}">GENERATE</button>
-		<span class="flex-1 px-2 py-1 relative overflow-hidden {running || genPerSecHistory.length ? '' : 'opacity-40'}">
-			{#if running || genPerSecHistory.length}
+		<span class="flex-1 px-2 py-1 relative overflow-hidden {status?.message || running || genPerSecHistory.length ? '' : 'opacity-40'}">
+			{#if status?.message}
+				<span class={status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success'}>{status.message}</span>
+			{:else if running || genPerSecHistory.length}
 				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{maxGenPerSec > 0 ? Math.max(0, (currentGenPerSec - minGenPerSec) / (maxGenPerSec - minGenPerSec) * 100) : 0}%"></div>
+				<span class="relative">{currentGenPerSec.toLocaleString()} gen/s</span>
 			{/if}
-			<span class="relative">{running || genPerSecHistory.length ? `${currentGenPerSec.toLocaleString()} gen/s` : ''}</span>
 		</span>
 		<span class="w-28 shrink-0 border-l border-base-300 overflow-hidden flex items-end" style="height:1.75rem">
-			<canvas bind:this={perfCanvas} class="w-full" style="height:1.75rem"></canvas>
+			<PerfGraph data={genPerSecHistory} currentValue={currentGenPerSec} {running} />
 		</span>
 		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'marching-border' : ''}">STOP</button>
 	</div>
 
 	<div class="form-row">
 		<label class="form-label"><span>PUBLIC KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">b58</span></label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{#if showMatchColors && displayAddress}{#each displayAddress.slice(0, addrStartLen).split('') as char, i}{#if prefix && i < prefix.length && char === prefix[i]}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}...{#each displayAddress.slice(-addrEndLen).split('') as char, i}{@const realIndex = displayAddress.length - addrEndLen + i}{#if suffix && realIndex >= displayAddress.length - suffix.length && char === suffix[realIndex - (displayAddress.length - suffix.length)]}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}{:else}{displayAddress ? shortKey(displayAddress, addrStartLen, addrEndLen) : ''}{/if}</span>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && totalTarget ? (!running && result ? 'text-success' : !running && !result && status ? 'text-error' : '') : 'opacity-40'}">
-			{#if showMatchColors && totalTarget}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{totalMatched / totalTarget * 100}%"></div>{/if}
-			<span class="relative">{showMatchColors && totalTarget ? totalMatched : 0}/{totalTarget || 0}</span>
+		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">
+			{#if showMatchColors && displayAddress}
+				{#each displayAddress.slice(0, addrStartLen).split('') as char, i}
+					{#if prefix && i < prefix.length && char === prefix[i]}<span class="text-success">{char}</span>{:else}{char}{/if}
+				{/each}...{#each displayAddress.slice(-addrEndLen).split('') as char, i}
+					{@const realIndex = displayAddress.length - addrEndLen + i}
+					{#if suffix && realIndex >= displayAddress.length - suffix.length && char === suffix[realIndex - (displayAddress.length - suffix.length)]}<span class="text-success">{char}</span>{:else}{char}{/if}
+				{/each}
+			{:else}
+				{displayAddress ? shortKey(displayAddress, addrStartLen, addrEndLen) : ''}
+			{/if}
 		</span>
+		<ProgressCell
+			pct={totalTarget ? totalMatched / totalTarget * 100 : 0}
+			show={!!(showMatchColors && totalTarget)}
+			class={showMatchColors && totalTarget ? (!running && result ? 'text-success' : !running && !result && status ? 'text-error' : '') : 'opacity-40'}
+		>
+			{showMatchColors && totalTarget ? totalMatched : 0}/{totalTarget || 0}
+		</ProgressCell>
 		<button onclick={() => navigator.clipboard.writeText(displayAddress)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
 	</div>
-	<div class="form-row">
-		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">b58</span></label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(displayPrivateKey)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
-	</div>
-	<div class="form-row">
-		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">w24</span></label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{displayMnemonic ? '*** *** *** *** ...' : ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(displayMnemonic)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
-	</div>
-	<div class="form-row">
-		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">arr</span></label>
-		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{displayArray ? '[****,****,****,...]' : ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(displayArray)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
-	</div>
+
+	{#each privateKeyFormats as fmt}
+		<div class="form-row">
+			<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">{fmt.label}</span></label>
+			<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{fmt.display}</span>
+			<button onclick={() => navigator.clipboard.writeText(fmt.value)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
+		</div>
+	{/each}
 </div>
