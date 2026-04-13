@@ -139,7 +139,6 @@
 	}
 
 	function validate(): string | null {
-		if (!prefix && !suffix) return 'Enter a prefix or suffix.';
 		if (prefix && !isValidBase58(prefix)) return 'Prefix contains invalid base58 characters.';
 		if (suffix && !isValidBase58(suffix)) return 'Suffix contains invalid base58 characters.';
 		if (!maxTries || maxTries < 1) return 'Max tries must be at least 1.';
