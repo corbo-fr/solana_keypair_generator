@@ -469,7 +469,7 @@
 	</div>
 
 	<div class="form-row">
-		<button onclick={generate} disabled={running} class="form-action-left {running ? '' : 'animate-pulse'}">GENERATE</button>
+		<button onclick={generate} disabled={running} class="form-action-left {running ? '' : 'marching-border'}">GENERATE</button>
 		<span class="flex-1 px-2 py-1 relative overflow-hidden {running || genPerSecHistory.length ? '' : 'opacity-40'}">
 			{#if running || genPerSecHistory.length}
 				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{maxGenPerSec > 0 ? Math.max(0, (currentGenPerSec - minGenPerSec) / (maxGenPerSec - minGenPerSec) * 100) : 0}%"></div>
@@ -479,7 +479,7 @@
 		<span class="w-28 shrink-0 border-l border-base-300 overflow-hidden flex items-end" style="height:1.75rem">
 			<canvas bind:this={perfCanvas} class="w-full" style="height:1.75rem"></canvas>
 		</span>
-		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'animate-pulse' : ''}">STOP</button>
+		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'marching-border' : ''}">STOP</button>
 	</div>
 
 	<div class="form-row">

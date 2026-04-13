@@ -146,10 +146,48 @@ body {
 
 /* Action button — fixed-width right column */
 .form-action {
-  @apply w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none;
+  @apply w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none;
 }
 
 /* Action button — fixed-width left column (e.g. GENERATE) */
 .form-action-left {
-  @apply w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none;
+  @apply w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none;
+}
+
+/* Marching stripes border — road-marking style, clockwise */
+.marching-border {
+  position: relative;
+}
+
+.marching-border::before {
+  content: '';
+  position: absolute;
+  inset: 1px;
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.15s;
+  background:
+    /* top edge → moves right */
+    linear-gradient(90deg, currentColor 50%, transparent 50%) 0 0 / 6px 2px repeat-x,
+    /* right edge → moves down */
+    linear-gradient(180deg, currentColor 50%, transparent 50%) 100% 0 / 2px 6px repeat-y,
+    /* bottom edge → moves left */
+    linear-gradient(90deg, currentColor 50%, transparent 50%) 0 100% / 6px 2px repeat-x,
+    /* left edge → moves up */
+    linear-gradient(180deg, currentColor 50%, transparent 50%) 0 0 / 2px 6px repeat-y;
+  animation: march-cw 0.3s linear infinite;
+}
+
+.marching-border:disabled::before {
+  opacity: 0;
+}
+
+@keyframes march-cw {
+  to {
+    background-position:
+      6px 0,
+      100% 6px,
+      -6px 100%,
+      0 -6px;
+  }
 }

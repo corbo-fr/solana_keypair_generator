@@ -22,6 +22,6 @@
 	{#if connected}
 		<button onclick={toggleConnect} class="px-2 py-1 uppercase tracking-widest border-l border-base-300 text-success hover:bg-base-200">{shortKey(address)}</button>
 	{:else}
-		<button onclick={toggleConnect} class="px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 animate-pulse">CONNECT WALLET</button>
+		<button onclick={toggleConnect} class="px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 marching-border">CONNECT WALLET</button>
 	{/if}
 </header>
