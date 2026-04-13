@@ -507,12 +507,11 @@
 	{/each}
 
 	<div class="form-row">
-		<label class="form-label">WALLETS</label>
+		<button onclick={importToWallets} disabled={!result} class="form-action-left !text-success {result ? 'marching-border' : ''}">IMPORT</button>
 		<span class="flex-1 px-2 py-1 {importStatus ? '' : 'opacity-40'}">
 			{#if importStatus}
 				<span class={importStatus.type === 'error' ? 'text-error' : 'text-success'}>{importStatus.message}</span>
 			{/if}
 		</span>
-		<button onclick={importToWallets} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">IMPORT</button>
 	</div>
 </div>
