@@ -121,7 +121,7 @@ body {
 
 /* Page description — optional subtitle/help text below title */
 .page-description {
-  @apply px-2 py-1 border-b border-base-300 text-sm opacity-70;
+  @apply px-2 py-1 border-b border-base-300 opacity-70;
 }
 
 /* Form row — horizontal container for label + input/value + action */
