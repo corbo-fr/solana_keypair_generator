@@ -27,6 +27,7 @@
 		"wrangler": "^4.81.0"
 	},
 	"dependencies": {
+		"@scure/bip39": "^2.0.1",
 		"@solana/kit": "^6.8.0",
 		"@solana/web3.js": "^1.98.4",
 		"daisyui": "^5.5.19"

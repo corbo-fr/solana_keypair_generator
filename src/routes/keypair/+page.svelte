@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { onDestroy } from 'svelte';
 	import { shortKey } from '$lib/format';
+	import { entropyToMnemonic } from '@scure/bip39';
+	import { wordlist } from '@scure/bip39/wordlists/english.js';
+	import { getBase58Encoder } from '@solana/kit';
 
 	// --- Constants ---
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -38,6 +41,22 @@
 	let displayPrivateKey = $derived(result?.privateKey ?? preview?.privateKey ?? '');
 	let addrStartLen = $derived(Math.max(4, prefix.length));
 	let addrEndLen = $derived(Math.max(4, suffix.length));
+
+	let displayMnemonic = $derived.by(() => {
+		if (!displayPrivateKey) return '';
+		try {
+			const bytes = getBase58Encoder().encode(displayPrivateKey);
+			return entropyToMnemonic(bytes.slice(0, 32), wordlist);
+		} catch { return ''; }
+	});
+
+	let displayArray = $derived.by(() => {
+		if (!displayPrivateKey) return '';
+		try {
+			const bytes = getBase58Encoder().encode(displayPrivateKey);
+			return '[' + Array.from(bytes).join(',') + ']';
+		} catch { return ''; }
+	});
 
 	let prefixMatched = $derived.by(() => {
 		if (!displayAddress || !prefix) return 0;
@@ -346,5 +365,15 @@
 		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">b58</span></label>
 		<span class="form-value {running && !result ? 'opacity-40' : ''}">{displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : ''}</span>
 		<button onclick={() => navigator.clipboard.writeText(displayPrivateKey)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
+	</div>
+	<div class="form-row">
+		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">w24</span></label>
+		<span class="form-value {running && !result ? 'opacity-40' : ''}">{displayMnemonic ? '*** *** *** *** ...' : ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(displayMnemonic)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
+	</div>
+	<div class="form-row">
+		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">arr</span></label>
+		<span class="form-value {running && !result ? 'opacity-40' : ''}">{displayArray ? '[****,****,****,...]' : ''}</span>
+		<button onclick={() => navigator.clipboard.writeText(displayArray)} disabled={!result && (running || !preview)} class="form-action">COPY</button>
 	</div>
 </div>
