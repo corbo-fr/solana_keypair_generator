@@ -7,6 +7,7 @@
 	import { entropyToMnemonic } from '@scure/bip39';
 	import { wordlist } from '@scure/bip39/wordlists/english.js';
 	import { getBase58Encoder } from '@solana/kit';
+	import { loadWallets, saveWallets } from '$lib/wallets';
 
 	// --- Constants ---
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -285,6 +286,20 @@
 		stopWorkers();
 	}
 
+	let importStatus = $state<{ message: string; type: 'error' | 'success' } | null>(null);
+
+	function importToWallets() {
+		if (!result) return;
+		const wallets = loadWallets();
+		if (wallets.some((w) => w.publicKey === result!.address)) {
+			importStatus = { message: 'Already in wallets.', type: 'error' };
+			return;
+		}
+		wallets.push({ publicKey: result!.address, privateKey: result!.privateKey });
+		saveWallets(wallets);
+		importStatus = { message: `Imported (${wallets.length} total).`, type: 'success' };
+	}
+
 	onDestroy(terminateAll);
 </script>
 
@@ -468,4 +483,14 @@
 			<button onclick={() => navigator.clipboard.writeText(fmt.value)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
 		</div>
 	{/each}
+
+	<div class="form-row">
+		<label class="form-label">WALLETS</label>
+		<span class="flex-1 px-2 py-1 {importStatus ? '' : 'opacity-40'}">
+			{#if importStatus}
+				<span class={importStatus.type === 'error' ? 'text-error' : 'text-success'}>{importStatus.message}</span>
+			{/if}
+		</span>
+		<button onclick={importToWallets} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">IMPORT</button>
+	</div>
 </div>
