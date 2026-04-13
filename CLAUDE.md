@@ -119,6 +119,13 @@ Every page template follows this exact order inside a `<div class="flex flex-col
 - **STOP button** uses `!text-error` and `marching-border` when running.
 - Inputs are always `disabled={running}` during a process.
 
+### Input Persistence
+
+- **All form inputs must persist across navigation.** When the user leaves a page and comes back, every input field must retain its last value.
+- Use `loadInputs(page, defaults)` and `saveInputs(page, values)` from `$lib/persist.ts` to save/restore form inputs to `localStorage`.
+- Initialize `$state` variables from `loadInputs()` at the top of the script, and add a `$effect` that calls `saveInputs()` whenever any input changes.
+- Only persist user-editable form inputs (prefix, suffix, threads, etc.) — never persist transient state (running, status, result, preview, performance data).
+
 ### State & Lifecycle Patterns
 
 - **`running` boolean** — gates UI: disables inputs, toggles button visibility, dims preview values.
