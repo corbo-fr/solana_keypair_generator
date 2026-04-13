@@ -58,6 +58,9 @@
 		return count;
 	});
 
+	let totalTarget = $derived((prefix.length || 0) + (suffix.length || 0));
+	let totalMatched = $derived(prefixMatched + suffixMatched);
+
 	// --- Helpers ---
 	function formatTime(seconds: number): string {
 		return `${Math.floor(seconds / 60)}m ${Math.floor(seconds % 60)}s`;
@@ -266,6 +269,10 @@
 			autocomplete="off"
 			class="form-input"
 		/>
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {running || tries > 0 ? 'opacity-70' : 'opacity-40'}">
+			{#if running || tries > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, tries / maxTries * 100)}%"></div>{/if}
+			<span class="relative">{tries.toLocaleString()}</span>
+		</span>
 		<button onclick={() => maxTries = 100_000_000} disabled={running} class="form-action">DEFAULT</button>
 	</div>
 
@@ -281,6 +288,10 @@
 			autocomplete="off"
 			class="form-input"
 		/>
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {running || elapsed > 0 ? 'opacity-70' : 'opacity-40'}">
+			{#if running || elapsed > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, elapsed / (maxTime * 60) * 100)}%"></div>{/if}
+			<span class="relative">{formatTime(elapsed)}</span>
+		</span>
 		<button onclick={() => maxTime = 10} disabled={running} class="form-action">DEFAULT</button>
 	</div>
 
@@ -301,13 +312,10 @@
 
 	<div class="form-row">
 		<button onclick={generate} disabled={running} class="form-action-left {running ? '' : 'animate-pulse'}">GENERATE</button>
-		<span class="flex-1 px-2 py-1 relative overflow-hidden {status?.message && tries === 0 && !running ? 'text-error' : (running || tries > 0 ? 'opacity-70' : 'opacity-40')}">
-			{#if running || tries > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, tries / maxTries * 100)}%"></div>{/if}
-			<span class="relative">{status?.message && tries === 0 && !running ? status.message : `${tries.toLocaleString()} ${tries === 1 ? 'try' : 'tries'}`}</span>
-		</span>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center {running || elapsed > 0 ? 'opacity-70' : 'opacity-40'} relative overflow-hidden">
-			{#if running || elapsed > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, elapsed / (maxTime * 60) * 100)}%"></div>{/if}
-			<span class="relative">{formatTime(elapsed)}</span>
+		<span class="flex-1 px-2 py-1 {running ? '' : status ? (status.type === 'success' ? 'text-success' : status.type === 'warning' ? 'text-warning' : 'text-error') : 'opacity-40'}">{running ? 'GENERATING' : status ? (status.type === 'success' ? 'SUCCEED' : status.type === 'warning' ? 'STOPPED' : 'FAILED') : ''}</span>
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && totalTarget ? (!running && result ? 'text-success' : !running && !result && status ? 'text-error' : '') : 'opacity-40'}">
+			{#if showMatchColors && totalTarget}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{totalMatched / totalTarget * 100}%"></div>{/if}
+			<span class="relative">{showMatchColors && totalTarget ? totalMatched : 0}/{totalTarget || 0}</span>
 		</span>
 		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'animate-pulse' : ''}">STOP</button>
 	</div>
