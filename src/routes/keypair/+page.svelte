@@ -8,6 +8,7 @@
 	import { wordlist } from '@scure/bip39/wordlists/english.js';
 	import { getBase58Encoder } from '@solana/kit';
 	import { loadWallets, saveWallets } from '$lib/wallets';
+	import DiagonalStripes from '$lib/components/DiagonalStripes.svelte';
 
 	// --- Constants ---
 	const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -436,6 +437,8 @@
 		<button onclick={() => threads = defaultThreads} disabled={running} class="form-action">AVAILABLE</button>
 	</div>
 
+	<DiagonalStripes />
+
 	<div class="form-row">
 		<button onclick={generate} disabled={running} class="form-action-left {running ? '' : 'marching-border'}">GENERATE</button>
 		<span class="flex-1 px-2 py-1 relative overflow-hidden {status?.message || running || genPerSecHistory.length ? '' : 'opacity-40'}">
@@ -451,6 +454,8 @@
 		</span>
 		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'marching-border' : ''}">STOP</button>
 	</div>
+
+	<DiagonalStripes />
 
 	<div class="form-row">
 		<label class="form-label"><span>PUBLIC KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">b58</span></label>
