@@ -139,7 +139,7 @@
 	<div class="form-row">
 		<button onclick={importJson} class="form-action-left">IMPORT</button>
 		<span class="form-value opacity-40">{wallets.length} wallet{wallets.length !== 1 ? 's' : ''}</span>
-		<button onclick={() => { wallets = []; }} disabled={wallets.length === 0} class="form-action !text-error border-r-0">RESET</button>
+		<button onclick={() => { wallets = []; }} disabled={wallets.length === 0} class="form-action !text-error border-r-0">RESET ALL</button>
 		<button onclick={exportJson} disabled={wallets.length === 0} class="form-action">EXPORT</button>
 	</div>
 
