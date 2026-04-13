@@ -145,8 +145,8 @@
 		<div class="form-row">
 			<label class="form-label"><span class="opacity-30 font-normal normal-case tracking-normal mr-2">#{i + 1}</span>{shortKey(wallet.publicKey)}</label>
 			<input type="text" bind:value={wallet.label} placeholder="label" autocomplete="off" class="form-input" />
-			<button onclick={() => moveWallet(i, -1)} disabled={i === 0} class="shrink-0 w-8 border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">&#9650;</button>
-			<button onclick={() => moveWallet(i, 1)} disabled={i === wallets.length - 1} class="shrink-0 w-8 border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">&#9660;</button>
+			<button onclick={() => moveWallet(i, -1)} disabled={i === 0} class="shrink-0 w-8 border-l border-base-300 opacity-50 hover:bg-base-200 disabled:opacity-20 disabled:pointer-events-none">&#9650;</button>
+			<button onclick={() => moveWallet(i, 1)} disabled={i === wallets.length - 1} class="shrink-0 w-8 border-l border-base-300 opacity-50 hover:bg-base-200 disabled:opacity-20 disabled:pointer-events-none">&#9660;</button>
 			<button onclick={() => removeWallet(i)} class="form-action !text-error">DELETE</button>
 		</div>
 	{/each}
