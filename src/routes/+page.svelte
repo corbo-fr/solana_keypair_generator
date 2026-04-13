@@ -114,11 +114,11 @@
 
 	<DiagonalStripes />
 
-	<!-- Import wallet -->
+	<!-- Add wallet -->
 	<div class="form-row">
-		<button onclick={addWallet} class="form-action-left">IMPORT</button>
 		<div class="flex-1 border-r border-base-300"><input type="text" bind:value={publicKeyInput} placeholder="public key" autocomplete="off" class="form-input w-full" /></div>
 		<div class="flex-1"><input type="password" bind:value={privateKeyInput} placeholder="private key" autocomplete="off" class="form-input w-full" /></div>
+		<button onclick={addWallet} class="form-action">ADD</button>
 	</div>
 
 	<DiagonalStripes />
