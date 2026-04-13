@@ -3,6 +3,7 @@ const STORAGE_KEY = 'solbox_wallets';
 export type Wallet = {
 	publicKey: string;
 	privateKey: string;
+	label: string;
 };
 
 export function loadWallets(): Wallet[] {
@@ -12,9 +13,9 @@ export function loadWallets(): Wallet[] {
 		if (!raw) return [];
 		const parsed = JSON.parse(raw);
 		if (!Array.isArray(parsed)) return [];
-		return parsed.filter(
-			(w: any) => typeof w.publicKey === 'string' && typeof w.privateKey === 'string'
-		);
+		return parsed
+			.filter((w: any) => typeof w.publicKey === 'string' && typeof w.privateKey === 'string')
+			.map((w: any) => ({ publicKey: w.publicKey, privateKey: w.privateKey, label: w.label || '' }));
 	} catch {
 		return [];
 	}

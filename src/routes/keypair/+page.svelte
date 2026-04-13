@@ -296,7 +296,7 @@
 			importStatus = { message: 'Already in wallets.', type: 'error' };
 			return;
 		}
-		wallets.push({ publicKey: result!.address, privateKey: result!.privateKey });
+		wallets.push({ publicKey: result!.address, privateKey: result!.privateKey, label: '' });
 		saveWallets(wallets);
 		importStatus = { message: `Imported (${wallets.length} total).`, type: 'success' };
 	}

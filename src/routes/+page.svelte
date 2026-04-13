@@ -1,5 +1,6 @@
 <script lang="ts">
 	import MarqueeText from '$lib/components/MarqueeText.svelte';
+	import DiagonalStripes from '$lib/components/DiagonalStripes.svelte';
 	import { loadWallets, saveWallets, type Wallet } from '$lib/wallets';
 	import { shortKey } from '$lib/format';
 	import { Keypair } from '@solana/web3.js';
@@ -7,9 +8,9 @@
 
 	// --- State ---
 	let wallets = $state<Wallet[]>(loadWallets());
+	let fileInput: HTMLInputElement;
 	let publicKeyInput = $state('');
 	let privateKeyInput = $state('');
-	let importJsonInput = $state('');
 	type Status = { message: string; type: 'error' | 'warning' | 'success' };
 	let status = $state<Status | null>(null);
 
@@ -23,7 +24,7 @@
 		const keypair = Keypair.generate();
 		const address = keypair.publicKey.toBase58();
 		const privateKey = getBase58Decoder().decode(keypair.secretKey);
-		wallets = [...wallets, { publicKey: address, privateKey }];
+		wallets = [...wallets, { publicKey: address, privateKey, label: '' }];
 		status = { message: `Wallet generated (${wallets.length} total).`, type: 'success' };
 	}
 
@@ -38,7 +39,7 @@
 			status = { message: 'This public key already exists.', type: 'warning' };
 			return;
 		}
-		wallets = [...wallets, { publicKey: pub, privateKey: priv }];
+		wallets = [...wallets, { publicKey: pub, privateKey: priv, label: '' }];
 		publicKeyInput = '';
 		privateKeyInput = '';
 		status = { message: `Wallet added (${wallets.length} total).`, type: 'success' };
@@ -50,37 +51,42 @@
 	}
 
 	function importJson() {
-		const raw = importJsonInput.trim();
-		if (!raw) {
-			status = { message: 'Paste a JSON array to import.', type: 'error' };
-			return;
-		}
-		try {
-			const parsed = JSON.parse(raw);
-			if (!Array.isArray(parsed)) {
-				status = { message: 'JSON must be an array.', type: 'error' };
-				return;
-			}
-			const valid: Wallet[] = [];
-			for (const item of parsed) {
-				if (typeof item.publicKey !== 'string' || typeof item.privateKey !== 'string') {
-					status = { message: 'Each item must have publicKey and privateKey strings.', type: 'error' };
+		fileInput.click();
+	}
+
+	function handleFileImport(e: Event) {
+		const file = (e.target as HTMLInputElement).files?.[0];
+		if (!file) return;
+		const reader = new FileReader();
+		reader.onload = () => {
+			try {
+				const parsed = JSON.parse(reader.result as string);
+				if (!Array.isArray(parsed)) {
+					status = { message: 'JSON must be an array.', type: 'error' };
 					return;
 				}
-				if (!wallets.some((w) => w.publicKey === item.publicKey) && !valid.some((w) => w.publicKey === item.publicKey)) {
-					valid.push({ publicKey: item.publicKey, privateKey: item.privateKey });
+				const valid: Wallet[] = [];
+				for (const item of parsed) {
+					if (typeof item.publicKey !== 'string' || typeof item.privateKey !== 'string') {
+						status = { message: 'Each item must have publicKey and privateKey strings.', type: 'error' };
+						return;
+					}
+					if (!wallets.some((w) => w.publicKey === item.publicKey) && !valid.some((w) => w.publicKey === item.publicKey)) {
+						valid.push({ publicKey: item.publicKey, privateKey: item.privateKey, label: item.label || '' });
+					}
 				}
+				if (valid.length === 0) {
+					status = { message: 'No new wallets to import (all duplicates).', type: 'warning' };
+					return;
+				}
+				wallets = [...wallets, ...valid];
+				status = { message: `Imported ${valid.length} wallet${valid.length > 1 ? 's' : ''} (${wallets.length} total).`, type: 'success' };
+			} catch {
+				status = { message: 'Invalid JSON.', type: 'error' };
 			}
-			if (valid.length === 0) {
-				status = { message: 'No new wallets to import (all duplicates).', type: 'warning' };
-				return;
-			}
-			wallets = [...wallets, ...valid];
-			importJsonInput = '';
-			status = { message: `Imported ${valid.length} wallet${valid.length > 1 ? 's' : ''} (${wallets.length} total).`, type: 'success' };
-		} catch {
-			status = { message: 'Invalid JSON.', type: 'error' };
-		}
+			fileInput.value = '';
+		};
+		reader.readAsText(file);
 	}
 
 	function exportJson() {
@@ -89,88 +95,45 @@
 		status = { message: `Exported ${wallets.length} wallet${wallets.length !== 1 ? 's' : ''} to clipboard.`, type: 'success' };
 	}
 
-	function clearAll() {
-		wallets = [];
-		status = { message: 'All wallets cleared.', type: 'success' };
-	}
 </script>
+
+<input type="file" accept=".json" bind:this={fileInput} onchange={handleFileImport} class="hidden" />
 
 <div class="flex flex-col">
 	<h1 class="page-title">WALLET MANAGER</h1>
 
 	<MarqueeText text="Manage your Solana keypairs locally. Generate, import/export as JSON, add or remove wallets. Everything is stored in your browser's localStorage — nothing leaves your machine." />
 
-	<!-- Add wallet form -->
+	<!-- Import / Export -->
 	<div class="form-row">
-		<label class="form-label">PUBLIC KEY</label>
-		<input
-			type="text"
-			bind:value={publicKeyInput}
-			placeholder="base58 public key"
-			autocomplete="off"
-			class="form-input"
-		/>
-		<button onclick={() => { publicKeyInput = ''; }} class="form-action">CLEAN</button>
+		<button onclick={importJson} class="form-action-left">IMPORT</button>
+		<span class="form-value opacity-40">{wallets.length} wallet{wallets.length !== 1 ? 's' : ''}</span>
+		<button onclick={exportJson} disabled={wallets.length === 0} class="form-action">EXPORT</button>
 	</div>
 
+	<DiagonalStripes />
+
+	<!-- Import wallet -->
 	<div class="form-row">
-		<label class="form-label">PRIVATE KEY</label>
-		<input
-			type="text"
-			bind:value={privateKeyInput}
-			placeholder="base58 private key"
-			autocomplete="off"
-			class="form-input"
-		/>
-		<button onclick={() => { privateKeyInput = ''; }} class="form-action">CLEAN</button>
+		<button onclick={addWallet} class="form-action-left">IMPORT</button>
+		<div class="flex-1 border-r border-base-300"><input type="text" bind:value={publicKeyInput} placeholder="public key" autocomplete="off" class="form-input w-full" /></div>
+		<div class="flex-1"><input type="password" bind:value={privateKeyInput} placeholder="private key" autocomplete="off" class="form-input w-full" /></div>
 	</div>
 
-	<div class="form-row">
-		<button onclick={addWallet} class="form-action-left marching-border">ADD</button>
-		<span class="flex-1 px-2 py-1 {status ? '' : 'opacity-40'}">
-			{#if status}
-				<span class={status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success'}>{status.message}</span>
-			{/if}
-		</span>
-		<button onclick={generateWallet} class="form-action marching-border">GENERATE</button>
-	</div>
+	<DiagonalStripes />
 
-	<!-- Import JSON -->
+	<!-- Generate / Delete all -->
 	<div class="form-row">
-		<label class="form-label"><span>IMPORT</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">json</span></label>
-		<input
-			type="text"
-			bind:value={importJsonInput}
-			placeholder='[{{"publicKey":"...","privateKey":"..."}}]'
-			autocomplete="off"
-			class="form-input"
-		/>
-		<button onclick={importJson} class="form-action">IMPORT</button>
-	</div>
-
-	<!-- Export / Clear -->
-	<div class="form-row">
-		<label class="form-label"><span>EXPORT</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">json</span></label>
-		<span class="form-value opacity-40">{wallets.length} wallet{wallets.length !== 1 ? 's' : ''} in storage</span>
-		<button onclick={exportJson} disabled={wallets.length === 0} class="form-action !text-success {wallets.length > 0 ? 'marching-border' : ''}">COPY JSON</button>
-	</div>
-
-	<div class="form-row">
-		<label class="form-label"></label>
+		<button onclick={generateWallet} class="form-action-left">GENERATE</button>
 		<span class="form-value"></span>
-		<button onclick={clearAll} disabled={wallets.length === 0} class="form-action !text-error">CLEAR ALL</button>
+		<button onclick={() => { wallets = []; }} disabled={wallets.length === 0} class="form-action !text-error">DELETE ALL</button>
 	</div>
 
 	<!-- Wallet list -->
 	{#each wallets as wallet, i}
 		<div class="form-row">
-			<label class="form-label"><span>#{i + 1}</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">wallet</span></label>
-			<span class="form-value">{shortKey(wallet.publicKey, 12, 12)}</span>
-			<button onclick={() => navigator.clipboard.writeText(wallet.publicKey)} class="form-action !text-success">COPY PUB</button>
-		</div>
-		<div class="form-row">
-			<label class="form-label"></label>
-			<span class="form-value opacity-40">****{'.' .repeat(20)}****</span>
+			<label class="form-label"><span class="opacity-30 font-normal normal-case tracking-normal mr-2">#{i + 1}</span>{shortKey(wallet.publicKey)}</label>
+			<input type="text" bind:value={wallet.label} placeholder="label" autocomplete="off" class="form-input" />
 			<button onclick={() => removeWallet(i)} class="form-action !text-error">DELETE</button>
 		</div>
 	{/each}
