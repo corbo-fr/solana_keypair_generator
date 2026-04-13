@@ -78,6 +78,7 @@
 		let count = 0;
 		for (let i = 0; i < prefix.length; i++) {
 			if (displayAddress[i] === prefix[i]) count++;
+			else break;
 		}
 		return count;
 	});
@@ -86,8 +87,10 @@
 		if (!displayAddress || !suffix) return 0;
 		let count = 0;
 		for (let i = 0; i < suffix.length; i++) {
-			const ai = displayAddress.length - suffix.length + i;
-			if (ai >= 0 && displayAddress[ai] === suffix[i]) count++;
+			const ai = displayAddress.length - 1 - i;
+			const si = suffix.length - 1 - i;
+			if (ai >= 0 && displayAddress[ai] === suffix[si]) count++;
+			else break;
 		}
 		return count;
 	});
@@ -121,8 +124,11 @@
 	}
 
 	function validate(): string | null {
+		if (!prefix && !suffix) return 'Enter a prefix or suffix.';
 		if (prefix && !isValidBase58(prefix)) return 'Prefix contains invalid base58 characters.';
 		if (suffix && !isValidBase58(suffix)) return 'Suffix contains invalid base58 characters.';
+		if (!maxTries || maxTries < 1) return 'Max tries must be at least 1.';
+		if (!maxTime || maxTime < 1) return 'Max time must be at least 1 minute.';
 		if (threads < 1 || threads > 64) return 'Threads must be between 1 and 64.';
 		return null;
 	}
@@ -421,7 +427,7 @@
 			{#if status?.message}
 				<span class={status.type === 'error' ? 'text-error' : status.type === 'warning' ? 'text-warning' : 'text-success'}>{status.message}</span>
 			{:else if running || genPerSecHistory.length}
-				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{maxGenPerSec > 0 ? Math.max(0, (currentGenPerSec - minGenPerSec) / (maxGenPerSec - minGenPerSec) * 100) : 0}%"></div>
+				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{maxGenPerSec > minGenPerSec ? Math.max(0, (currentGenPerSec - minGenPerSec) / (maxGenPerSec - minGenPerSec) * 100) : 0}%"></div>
 				<span class="relative">{currentGenPerSec.toLocaleString()} gen/s</span>
 			{/if}
 		</span>
