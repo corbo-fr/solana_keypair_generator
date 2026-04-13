@@ -8,7 +8,7 @@
 	} = $props();
 </script>
 
-<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {className}">
+<span class="w-22 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {className}">
 	{#if show}
 		<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{pct}%"></div>
 	{/if}

@@ -72,6 +72,14 @@ body {
   padding: 0;
   background-color: var(--color-base-100);
   color: var(--color-base-content);
+  font-size: 0.875rem;
+  line-height: 1.5rem;
+}
+
+/* Uniform font size and line height everywhere — no exceptions */
+body * {
+  font-size: inherit;
+  line-height: inherit;
 }
 
 /* Strip DaisyUI component spacing — only keep minimal text padding */
@@ -161,7 +169,7 @@ body {
 
 /* Action button — fixed-width right column */
 .form-action {
-  @apply w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none;
+  @apply w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none;
 }
 
 /* Action button — fixed-width left column (e.g. GENERATE) */

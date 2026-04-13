@@ -7,7 +7,7 @@
 	import { entropyToMnemonic } from '@scure/bip39';
 	import { wordlist } from '@scure/bip39/wordlists/english.js';
 	import { getBase58Encoder } from '@solana/kit';
-	import { loadWallets, saveWallets } from '$lib/wallets';
+	import { getWallets, updateConfig } from '$lib/config.svelte';
 	import DiagonalStripesSeparator from '$lib/components/DiagonalStripesSeparator.svelte';
 	import { loadInputs, saveInputs } from '$lib/persist';
 
@@ -303,14 +303,31 @@
 
 	function importToWallets() {
 		if (!result) return;
-		const wallets = loadWallets();
+		const wallets = getWallets();
 		if (wallets.some((w) => w.publicKey === result!.address)) {
 			importStatus = { message: 'Already in wallets.', type: 'error' };
 			return;
 		}
-		wallets.push({ publicKey: result!.address, privateKey: result!.privateKey, label: '' });
-		saveWallets(wallets);
-		importStatus = { message: `Imported (${wallets.length} total).`, type: 'success' };
+		// Compute mnemonic and byte array for the wallet entry
+		let mnemonic: string | undefined;
+		let byteArray: string | undefined;
+		try {
+			const bytes = getBase58Encoder().encode(result!.privateKey);
+			mnemonic = entropyToMnemonic(bytes.slice(0, 32), wordlist);
+			byteArray = '[' + Array.from(bytes).join(',') + ']';
+		} catch { /* ignore */ }
+		const newWallets = [...wallets, {
+			publicKey: result!.address,
+			privateKey: result!.privateKey,
+			mnemonic,
+			byteArray,
+			prefix: prefix || undefined,
+			suffix: suffix || undefined,
+		}];
+		const pfx = prefix ? `prefix="${prefix}" ` : '';
+		const sfx = suffix ? `suffix="${suffix}" ` : '';
+		updateConfig(newWallets, `Import keypair ${pfx}${sfx}${shortKey(result!.address)} — ${newWallets.length} total`);
+		importStatus = { message: `Imported (${newWallets.length} total).`, type: 'success' };
 	}
 
 	onDestroy(terminateAll);
@@ -442,7 +459,7 @@
 			autocomplete="off"
 			class="form-input"
 		/>
-		<span class="w-28 shrink-0 border-l border-base-300 flex items-end">
+		<span class="w-22 shrink-0 border-l border-base-300 flex items-end">
 			{#if threadHeights.length}
 				{#each threadHeights as h}
 					<div class="flex-1 {running ? 'bg-primary' : 'bg-base-200'} transition-all duration-150 ease-out" style="height:{h}%"></div>
@@ -466,7 +483,7 @@
 				<span class="relative">{currentGenPerSec.toLocaleString()} gen/s</span>
 			{/if}
 		</span>
-		<span class="w-28 shrink-0 border-l border-base-300 overflow-hidden flex items-end" style="height:1.75rem">
+		<span class="w-22 shrink-0 border-l border-base-300 overflow-hidden flex items-end" style="height:1.75rem">
 			<PerfGraph data={genPerSecHistory} currentValue={currentGenPerSec} {running} />
 		</span>
 		<button onclick={stop} disabled={!running} class="form-action !text-error {running ? 'marching-border' : ''}">STOP</button>

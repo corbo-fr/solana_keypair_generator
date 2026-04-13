@@ -8,7 +8,7 @@
 	];
 </script>
 
-<nav class="flex flex-col border-r border-base-300">
+<nav class="flex flex-col border-r border-base-300 bg-base-200 w-44 shrink-0">
 	{#each pages as p, i}
 		<a
 			href={p.href}
