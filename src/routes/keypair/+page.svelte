@@ -374,10 +374,10 @@
 				placeholder="SOL"
 				disabled={running}
 				autocomplete="off"
-				class="form-input w-full {showMatchColors && prefix && running ? 'text-transparent caret-transparent' : showMatchColors && prefix && !running ? 'text-success' : ''}"
+				class="form-input w-full {showMatchColors && prefix && running ? 'text-transparent caret-transparent' : showMatchColors && prefix && !running && result ? 'text-success' : ''}"
 			/>
 		</div>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : '') : 'opacity-40'}">
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : !running ? 'text-error' : '') : 'opacity-40'}">
 			{#if showMatchColors && prefix}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{prefixMatched / prefix.length * 100}%"></div>{/if}
 			<span class="relative">{showMatchColors && prefix ? prefixMatched : 0}/{prefix.length || 0}</span>
 		</span>
@@ -397,10 +397,10 @@
 				placeholder="BOX"
 				disabled={running}
 				autocomplete="off"
-				class="form-input w-full {showMatchColors && suffix && running ? 'text-transparent caret-transparent' : showMatchColors && suffix && !running ? 'text-success' : ''}"
+				class="form-input w-full {showMatchColors && suffix && running ? 'text-transparent caret-transparent' : showMatchColors && suffix && !running && result ? 'text-success' : ''}"
 			/>
 		</div>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : '') : 'opacity-40'}">
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : !running ? 'text-error' : '') : 'opacity-40'}">
 			{#if showMatchColors && suffix}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{suffixMatched / suffix.length * 100}%"></div>{/if}
 			<span class="relative">{showMatchColors && suffix ? suffixMatched : 0}/{suffix.length || 0}</span>
 		</span>
@@ -418,7 +418,7 @@
 			autocomplete="off"
 			class="form-input"
 		/>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {running || tries > 0 ? 'opacity-70' : 'opacity-40'}">
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {!running && !result && status ? 'text-error' : running || tries > 0 ? 'opacity-70' : 'opacity-40'}">
 			{#if running || tries > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, tries / maxTries * 100)}%"></div>{/if}
 			<span class="relative">{Math.min(100, Math.floor(tries / maxTries * 100))}%</span>
 		</span>
@@ -437,7 +437,7 @@
 			autocomplete="off"
 			class="form-input"
 		/>
-		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {running || elapsed > 0 ? 'opacity-70' : 'opacity-40'}">
+		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {!running && !result && status ? 'text-error' : running || elapsed > 0 ? 'opacity-70' : 'opacity-40'}">
 			{#if running || elapsed > 0}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{Math.min(100, elapsed / (maxTime * 60) * 100)}%"></div>{/if}
 			<span class="relative">{formatTime(elapsed)}</span>
 		</span>
@@ -489,21 +489,21 @@
 			{#if showMatchColors && totalTarget}<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{totalMatched / totalTarget * 100}%"></div>{/if}
 			<span class="relative">{showMatchColors && totalTarget ? totalMatched : 0}/{totalTarget || 0}</span>
 		</span>
-		<button onclick={() => navigator.clipboard.writeText(displayAddress)} disabled={!result && (running || !preview)} class="form-action !text-success {result || (!running && preview) ? 'marching-border' : ''}">COPY</button>
+		<button onclick={() => navigator.clipboard.writeText(displayAddress)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
 	</div>
 	<div class="form-row">
 		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">b58</span></label>
 		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(displayPrivateKey)} disabled={!result && (running || !preview)} class="form-action !text-success {result || (!running && preview) ? 'marching-border' : ''}">COPY</button>
+		<button onclick={() => navigator.clipboard.writeText(displayPrivateKey)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
 	</div>
 	<div class="form-row">
 		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">w24</span></label>
 		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{displayMnemonic ? '*** *** *** *** ...' : ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(displayMnemonic)} disabled={!result && (running || !preview)} class="form-action !text-success {result || (!running && preview) ? 'marching-border' : ''}">COPY</button>
+		<button onclick={() => navigator.clipboard.writeText(displayMnemonic)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
 	</div>
 	<div class="form-row">
 		<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">arr</span></label>
 		<span class="form-value {running && !result ? 'opacity-40' : ''} {!running && result ? 'bg-success/10' : !running && !result && status ? 'bg-error/10' : ''}">{displayArray ? '[****,****,****,...]' : ''}</span>
-		<button onclick={() => navigator.clipboard.writeText(displayArray)} disabled={!result && (running || !preview)} class="form-action !text-success {result || (!running && preview) ? 'marching-border' : ''}">COPY</button>
+		<button onclick={() => navigator.clipboard.writeText(displayArray)} disabled={!result} class="form-action !text-success {result ? 'marching-border' : ''}">COPY</button>
 	</div>
 </div>
