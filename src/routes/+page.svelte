@@ -19,6 +19,15 @@
 		saveWallets(wallets);
 	});
 
+	// --- Move ---
+	function moveWallet(index: number, direction: -1 | 1) {
+		const target = index + direction;
+		if (target < 0 || target >= wallets.length) return;
+		const copy = [...wallets];
+		[copy[index], copy[target]] = [copy[target], copy[index]];
+		wallets = copy;
+	}
+
 	// --- Actions ---
 	function generateWallet() {
 		const keypair = Keypair.generate();
@@ -107,15 +116,16 @@
 
 	<!-- Import / Export -->
 	<div class="form-row">
-		<button onclick={importJson} class="form-action-left">IMPORT</button>
+		<button onclick={importJson} class="form-action-left">IMPORT BATCH</button>
 		<span class="form-value opacity-40">{wallets.length} wallet{wallets.length !== 1 ? 's' : ''}</span>
 		<button onclick={exportJson} disabled={wallets.length === 0} class="form-action">EXPORT</button>
 	</div>
 
 	<DiagonalStripes />
 
-	<!-- Add wallet -->
+	<!-- Import wallet -->
 	<div class="form-row">
+		<button onclick={addWallet} class="form-action-left">IMPORT WALLET</button>
 		<div class="flex-1 border-r border-base-300"><input type="text" bind:value={publicKeyInput} placeholder="public key" autocomplete="off" class="form-input w-full" /></div>
 		<div class="flex-1"><input type="password" bind:value={privateKeyInput} placeholder="private key" autocomplete="off" class="form-input w-full" /></div>
 		<button onclick={addWallet} class="form-action">ADD</button>
@@ -135,6 +145,8 @@
 		<div class="form-row">
 			<label class="form-label"><span class="opacity-30 font-normal normal-case tracking-normal mr-2">#{i + 1}</span>{shortKey(wallet.publicKey)}</label>
 			<input type="text" bind:value={wallet.label} placeholder="label" autocomplete="off" class="form-input" />
+			<button onclick={() => moveWallet(i, -1)} disabled={i === 0} class="shrink-0 w-8 border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">&#9650;</button>
+			<button onclick={() => moveWallet(i, 1)} disabled={i === wallets.length - 1} class="shrink-0 w-8 border-l border-base-300 text-primary hover:bg-base-200 disabled:opacity-40 disabled:pointer-events-none">&#9660;</button>
 			<button onclick={() => removeWallet(i)} class="form-action !text-error">DELETE</button>
 		</div>
 	{/each}
