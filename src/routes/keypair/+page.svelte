@@ -75,7 +75,6 @@
 	}
 
 	function validate(): string | null {
-		if (!prefix && !suffix) return 'Enter a prefix or suffix (or both).';
 		if (prefix && !isValidBase58(prefix)) return 'Prefix contains invalid base58 characters.';
 		if (suffix && !isValidBase58(suffix)) return 'Suffix contains invalid base58 characters.';
 		if (threads < 1 || threads > 64) return 'Threads must be between 1 and 64.';
