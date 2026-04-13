@@ -54,8 +54,8 @@
 	// --- Derived ---
 	let displayAddress = $derived(result?.address ?? preview?.address ?? '');
 	let displayPrivateKey = $derived(result?.privateKey ?? preview?.privateKey ?? '');
-	let addrStartLen = $derived(Math.max(4, prefix.length));
-	let addrEndLen = $derived(Math.max(4, suffix.length));
+	let addrStartLen = $derived(Math.max(4, prefix.length + 4));
+	let addrEndLen = $derived(Math.max(4, suffix.length + 4));
 
 	let displayMnemonic = $derived.by(() => {
 		if (!displayPrivateKey) return '';
