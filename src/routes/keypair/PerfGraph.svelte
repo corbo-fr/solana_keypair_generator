@@ -29,8 +29,9 @@
 		canvas.width = w;
 		canvas.height = h;
 		ctx.clearRect(0, 0, w, h);
-		const raw = running ? [...data, currentValue] : data;
-		if (raw.length < 1) return;
+		let raw = running ? [...data, currentValue] : [...data];
+		if (raw.length === 0) raw = [0, 0];
+		else if (raw.length === 1) raw = [0, ...raw];
 		const points = downsample(raw);
 		const min = Math.min(...points);
 		const max = Math.max(...points);
