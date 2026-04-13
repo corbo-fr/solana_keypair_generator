@@ -78,6 +78,66 @@ Use these classes instead of repeating raw Tailwind classes:
 - Muted/secondary text uses `opacity-70` or `opacity-40`.
 - Running/loading states dim non-final values with `opacity-40`.
 
+## Page Development Rules
+
+### Svelte Patterns
+
+- **Svelte 5 only** — use `$state`, `$derived`, `$derived.by`, `$props`, `$effect`, `{@render}`. Never use Svelte 4 stores (`writable`, `$:`, `export let`).
+- **`<script lang="ts">`** — always TypeScript.
+- **Flat state at the top** — declare all `$state` variables at the top of the script, grouped by concern (form inputs, process state, results, performance tracking).
+- **Derived over computed** — use `$derived` / `$derived.by` for any value that can be computed from state. Never manually sync derived values.
+- **Type aliases inline** — define small types (`type KeyPair = { ... }`) directly in the component script, not in separate files, unless shared across multiple pages.
+
+### Page File Structure
+
+Each page lives in `src/routes/<page-name>/` with:
+
+- `+page.svelte` — main page component containing all state, logic, and template.
+- **Co-located child components** — page-specific components (e.g. `ProgressCell.svelte`, `PerfGraph.svelte`) live next to `+page.svelte`, not in `$lib/`.
+- **Web Workers** — if the page does CPU-intensive work, use a co-located worker file (e.g. `vanity-worker.ts`). Instantiate with `new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' })`.
+- **Shared components** go in `$lib/components/` only when used by multiple pages (e.g. `MarqueeText.svelte`).
+- **Shared utilities** go in `$lib/` (e.g. `format.ts`).
+
+### Template Structure
+
+Every page template follows this exact order inside a `<div class="flex flex-col">`:
+
+1. `<h1 class="page-title">PAGE NAME</h1>`
+2. `<MarqueeText text="..." />` — scrolling description text.
+3. **Input rows** — `form-row` with `form-label` + `form-input` + `form-action` (CLEAN/DEFAULT buttons).
+4. **Action row** — `form-row` with `form-action-left` (primary action like GENERATE) + status/feedback area + `form-action` (STOP or secondary action).
+5. **Result rows** — `form-row` with `form-label` + `form-value` + `form-action` (COPY buttons).
+
+### Form Row Conventions
+
+- **Labels** can have a secondary hint: `<label class="form-label"><span>LABEL</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">hint</span></label>`.
+- **CLEAN buttons** reset a single input to empty.
+- **DEFAULT buttons** reset an input to its default value.
+- **COPY buttons** use `navigator.clipboard.writeText(value)`, are disabled until a result exists, and use `!text-success` + `marching-border` when enabled.
+- **Primary action button** (GENERATE, SEND, etc.) uses `form-action-left` with `marching-border` when not running.
+- **STOP button** uses `!text-error` and `marching-border` when running.
+- Inputs are always `disabled={running}` during a process.
+
+### State & Lifecycle Patterns
+
+- **`running` boolean** — gates UI: disables inputs, toggles button visibility, dims preview values.
+- **`status` object** — `{ message: string, type: 'error' | 'warning' | 'success' } | null`. Displayed in the action row's middle cell.
+- **`result` object** — `null` until final result. When set, enables COPY buttons and removes opacity on values.
+- **`preview` object** — optional intermediate/best result during processing, displayed with `opacity-40`.
+- **`onDestroy(terminateAll)`** — always clean up intervals, workers, and listeners.
+- **`validate()` function** — returns error string or null. Called before starting any process. Sets `status` on error.
+
+### Result Display Patterns
+
+- Result values use conditional background: `bg-success/10` on success, `bg-error/10` on failure (no result + status set).
+- During processing, preview values show with `opacity-40`.
+- Private keys are never displayed in cleartext — always masked (`****...****`).
+- Multiple key formats (b58, mnemonic, byte array) each get their own row with format hint in the label.
+
+### Navigation
+
+- When adding a new page, add it to the `pages` array in `src/lib/components/NavBar.svelte`.
+
 ## Icons & Logos
 
 - All SVG icons/logos are sourced from **Iconify** (https://icon-sets.iconify.design/).
