@@ -364,7 +364,7 @@
 	<div class="form-row">
 		<label class="form-label"><span>PREFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
-			{#if showMatchColors && prefix}
+			{#if showMatchColors && prefix && running}
 				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each prefix.split('') as char, i}{#if displayAddress && displayAddress[i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
 			{/if}
 			<input
@@ -374,7 +374,7 @@
 				placeholder="SOL"
 				disabled={running}
 				autocomplete="off"
-				class="form-input w-full {showMatchColors && prefix ? 'text-transparent caret-transparent' : ''}"
+				class="form-input w-full {showMatchColors && prefix && running ? 'text-transparent caret-transparent' : showMatchColors && prefix && !running ? 'text-success' : ''}"
 			/>
 		</div>
 		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && prefix ? (prefixMatched === prefix.length ? 'text-success' : '') : 'opacity-40'}">
@@ -387,7 +387,7 @@
 	<div class="form-row">
 		<label class="form-label"><span>SUFFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>
 		<div class="flex-1 relative">
-			{#if showMatchColors && suffix}
+			{#if showMatchColors && suffix && running}
 				<span class="absolute inset-0 px-2 py-1 font-mono pointer-events-none">{#each suffix.split('') as char, i}{@const addr = displayAddress}{#if addr && addr[addr.length - suffix.length + i] === char}<span class="text-success">{char}</span>{:else}{char}{/if}{/each}</span>
 			{/if}
 			<input
@@ -397,7 +397,7 @@
 				placeholder="BOX"
 				disabled={running}
 				autocomplete="off"
-				class="form-input w-full {showMatchColors && suffix ? 'text-transparent caret-transparent' : ''}"
+				class="form-input w-full {showMatchColors && suffix && running ? 'text-transparent caret-transparent' : showMatchColors && suffix && !running ? 'text-success' : ''}"
 			/>
 		</div>
 		<span class="w-28 shrink-0 px-2 py-1 border-l border-base-300 text-center relative overflow-hidden {showMatchColors && suffix ? (suffixMatched === suffix.length ? 'text-success' : '') : 'opacity-40'}">
