@@ -2,6 +2,7 @@
 	import MarqueeText from '$lib/components/MarqueeText.svelte';
 	import DiagonalStripesSeparator from '$lib/components/DiagonalStripesSeparator.svelte';
 	import { getWallets, updateConfig, type WalletEntry } from '$lib/config.svelte';
+	import { parseWalletArray } from '$lib/schemas';
 	import { shortKey } from '$lib/format';
 	import { Keypair } from '@solana/web3.js';
 	import { getBase58Decoder } from '@solana/kit';
@@ -124,40 +125,23 @@
 		if (!file) return;
 		const reader = new FileReader();
 		reader.onload = () => {
-			try {
-				const parsed = JSON.parse(reader.result as string);
-				if (!Array.isArray(parsed)) {
-					status = { message: 'JSON must be an array.', type: 'error' };
-					return;
-				}
-				const valid: WalletEntry[] = [];
-				for (const item of parsed) {
-					if (typeof item.publicKey !== 'string' || typeof item.privateKey !== 'string') {
-						status = { message: 'Each item must have publicKey and privateKey strings.', type: 'error' };
-						return;
-					}
-					if (!wallets.some((w) => w.publicKey === item.publicKey) && !valid.some((w) => w.publicKey === item.publicKey)) {
-						valid.push({
-							publicKey: item.publicKey,
-							privateKey: item.privateKey,
-							mnemonic: item.mnemonic || undefined,
-							byteArray: item.byteArray || undefined,
-							label: item.label || undefined,
-							prefix: item.prefix || undefined,
-							suffix: item.suffix || undefined,
-						});
-					}
-				}
-				if (valid.length === 0) {
-					status = { message: 'No new wallets to import (all duplicates).', type: 'warning' };
-					return;
-				}
-				const newWallets = [...wallets, ...valid];
-				updateConfig(newWallets, `Import ${valid.length} wallet${valid.length > 1 ? 's' : ''} from file — ${newWallets.length} total`);
-				status = { message: `Imported ${valid.length} wallet${valid.length > 1 ? 's' : ''} (${newWallets.length} total).`, type: 'success' };
-			} catch {
-				status = { message: 'Invalid JSON.', type: 'error' };
+			const parsed = parseWalletArray(reader.result as string);
+			if (!parsed.ok) {
+				status = { message: parsed.message, type: 'error' };
+				fileInput.value = '';
+				return;
 			}
+			const valid = parsed.wallets.filter(
+				(w) => !wallets.some((e) => e.publicKey === w.publicKey)
+			);
+			if (valid.length === 0) {
+				status = { message: 'No new wallets to import (all duplicates).', type: 'warning' };
+				fileInput.value = '';
+				return;
+			}
+			const newWallets = [...wallets, ...valid];
+			updateConfig(newWallets, `Import ${valid.length} wallet${valid.length > 1 ? 's' : ''} from file — ${newWallets.length} total`);
+			status = { message: `Imported ${valid.length} wallet${valid.length > 1 ? 's' : ''} (${newWallets.length} total).`, type: 'success' };
 			fileInput.value = '';
 		};
 		reader.readAsText(file);
