@@ -100,9 +100,10 @@
 <input type="file" accept=".json" bind:this={fileInput} onchange={handleFileImport} class="hidden" />
 
 <div class="flex flex-col">
-	<h1 class="page-title">WALLET MANAGER</h1>
-
-	<MarqueeText text="Manage your Solana keypairs locally. Generate, import/export as JSON, add or remove wallets. Everything is stored in your browser's localStorage — nothing leaves your machine." />
+	<div class="page-header">
+		<h1 class="page-title">WALLET MANAGER</h1>
+		<MarqueeText text="Manage your Solana keypairs locally. Generate, import/export as JSON, add or remove wallets. Everything is stored in your browser's localStorage — nothing leaves your machine." />
+	</div>
 
 	<!-- Import / Export -->
 	<div class="form-row">

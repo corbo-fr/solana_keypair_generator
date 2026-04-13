@@ -305,9 +305,10 @@
 </script>
 
 <div class="flex flex-col">
-	<h1 class="page-title">KEYPAIR GENERATION</h1>
-
-	<MarqueeText text="Generate a Solana address that starts or ends with specific characters. Brute-forces random keypairs until a match is found. Longer patterns take exponentially more tries. Valid characters are base58: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l)." />
+	<div class="page-header">
+		<h1 class="page-title">KEYPAIR GENERATION</h1>
+		<MarqueeText text="Generate a Solana address that starts or ends with specific characters. Brute-forces random keypairs until a match is found. Longer patterns take exponentially more tries. Valid characters are base58: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l)." />
+	</div>
 
 	<div class="form-row">
 		<label class="form-label"><span>PREFIX</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">vanity</span></label>

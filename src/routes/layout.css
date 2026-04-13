@@ -124,14 +124,19 @@ body {
 
 /* ── Reusable layout classes ── */
 
-/* Page title — first element of every page */
-.page-title {
-  @apply px-2 py-1 uppercase tracking-widest border-b border-base-300 font-bold;
+/* Page header — title + description on the same row */
+.page-header {
+  @apply flex border-b border-base-300;
 }
 
-/* Page description — optional subtitle/help text below title */
+/* Page title — fixed-width left cell */
+.page-title {
+  @apply shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 font-bold;
+}
+
+/* Page description — fills remaining space */
 .page-description {
-  @apply px-2 py-1 border-b border-base-300 opacity-70;
+  @apply flex-1 min-w-0 px-2 py-1 opacity-70;
 }
 
 /* Form row — horizontal container for label + input/value + action */

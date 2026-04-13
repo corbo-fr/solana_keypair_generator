@@ -42,9 +42,10 @@ The user provides their own **RPC URL** in the frontend interface, which is used
 
 Every page follows this vertical structure — a `flex flex-col` container with stacked rows separated by `border-b border-base-300`:
 
-1. **Title** (`page-title`) — bold uppercase page name.
-2. **Description** (`page-description`) — optional help text, `text-sm opacity-70`.
-3. **Form rows** — one or more `form-row` containers.
+1. **Header** (`page-header`) — a single row containing the title and description side by side.
+   - **Title** (`page-title`) — bold uppercase page name, fixed-width with right border.
+   - **Description** (`page-description` via `MarqueeText`) — scrolling help text filling remaining space.
+2. **Form rows** — one or more `form-row` containers.
 4. **Result rows** — same row layout for displaying output values.
 
 ### Form Row Pattern (3-column grid)
@@ -63,8 +64,9 @@ For rows where the action is on the left (e.g. GENERATE), use `form-action-left`
 
 Use these classes instead of repeating raw Tailwind classes:
 
-- `page-title` — page heading (`px-2 py-1 uppercase tracking-widest border-b border-base-300 font-bold`)
-- `page-description` — subtitle/help text (`px-2 py-1 border-b border-base-300 text-sm opacity-70`)
+- `page-header` — header row container (`flex border-b border-base-300`)
+- `page-title` — page title cell (`shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 font-bold`)
+- `page-description` — scrolling description cell (`flex-1 min-w-0 px-2 py-1 opacity-70`)
 - `form-row` — horizontal row container (`flex border-b border-base-300`)
 - `form-label` — fixed-width label cell (`w-40 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300`)
 - `form-value` — flexible read-only value cell (`flex-1 px-2 py-1 break-all`)
@@ -102,8 +104,7 @@ Each page lives in `src/routes/<page-name>/` with:
 
 Every page template follows this exact order inside a `<div class="flex flex-col">`:
 
-1. `<h1 class="page-title">PAGE NAME</h1>`
-2. `<MarqueeText text="..." />` — scrolling description text.
+1. `<div class="page-header">` wrapping `<h1 class="page-title">PAGE NAME</h1>` + `<MarqueeText text="..." />` on the same line.
 3. **Input rows** — `form-row` with `form-label` + `form-input` + `form-action` (CLEAN/DEFAULT buttons).
 4. **Action row** — `form-row` with `form-action-left` (primary action like GENERATE) + status/feedback area + `form-action` (STOP or secondary action).
 5. **Result rows** — `form-row` with `form-label` + `form-value` + `form-action` (COPY buttons).
