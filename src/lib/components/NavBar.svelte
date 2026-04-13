@@ -2,11 +2,9 @@
 	import { page } from '$app/state';
 
 	const pages = [
-		{ label: 'WALLET', href: '/' },
+		{ label: 'WALLETS', href: '/' },
 		{ label: 'KEYPAIR', href: '/keypair' },
-		{ label: 'TRANSFER', href: '/transfer' },
-		{ label: 'TOKENS', href: '/tokens' },
-		{ label: 'AIRDROP', href: '/airdrop' }
+		{ label: 'TRANSFER', href: '/transfer' }
 	];
 </script>
 
