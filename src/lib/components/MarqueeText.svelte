@@ -1,9 +1,9 @@
 <script>
-	let { text, speed = 0.15 } = $props();
+	let { text, speed = 0.15, class: className = '' } = $props();
 	const duration = $derived(text.length * speed);
 </script>
 
-<div class="marquee-container page-description overflow-hidden whitespace-nowrap min-w-0">
+<div class="marquee-container page-description overflow-hidden whitespace-nowrap min-w-0 {className}">
 	<div class="marquee-track" style="animation-duration: {duration}s">
 		<span>{text}</span>
 		<span>{text}</span>
