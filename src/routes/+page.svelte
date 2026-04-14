@@ -85,7 +85,7 @@
 <div class="flex flex-col">
 	<div class="page-header">
 		<h1 class="page-title"><SolanaLogo class="inline w-3 h-3 mr-2" />SOLANA KEYPAIR GENERATION</h1>
-		<MarqueeText text="Generate a Solana address that starts or ends with specific characters. Brute-forces random keypairs until a match is found. Longer patterns take exponentially more tries. Valid characters are base58: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l)." />
+		<MarqueeText text="Generate a Solana keypair with a vanity address — choose a custom prefix and/or suffix for your public key. Keypairs are generated randomly until a match is found. Longer patterns take exponentially longer. Valid characters are base58 only: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l). Everything runs locally in your browser — your private key never leaves your device." />
 		<div class="shrink-0 flex border-l border-base-300">
 			<a href="https://x.com/trixky_2" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200"><XLogo class="w-3 h-3" /></a>
 			<a href="https://t.me/trixky_fr" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200 border-l border-base-300"><TelegramLogo class="w-3 h-3" /></a>
