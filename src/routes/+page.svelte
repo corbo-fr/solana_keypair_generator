@@ -87,7 +87,7 @@
 
 <div class="flex flex-col">
 	<div class="page-header">
-		<h1 class="page-title"><SolanaLogo class="inline w-3 h-3 mr-2" />SOLANA KEYPAIR GENERATION</h1>
+		<h1 class="page-title"><SolanaLogo class="inline w-3 h-3 mr-2" />SOLANA KEYPAIR GENERATOR</h1>
 		<MarqueeText text="Generate a Solana keypair with a vanity address — choose a custom prefix and/or suffix for your public key. Keypairs are generated randomly until a match is found. Longer patterns take exponentially longer. Valid characters are base58 only: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l). Everything runs locally in your browser — your private key never leaves your device." />
 		<div class="shrink-0 flex border-l border-base-300">
 			<a href="https://x.com/trixky_2" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200"><XLogo class="w-3 h-3" /></a>
@@ -161,7 +161,7 @@
 
 	<DiagonalStripesSeparator />
 
-	<div class="form-row">
+	<div class="form-row {!isVanity ? 'opacity-40' : ''}">
 		<label class="form-label">MAX TRIES</label>
 		<input
 			type="number"
@@ -182,7 +182,7 @@
 		<button onclick={() => s.maxTries = 100_000_000} disabled={s.running || !isVanity} class="form-action">DEFAULT</button>
 	</div>
 
-	<div class="form-row">
+	<div class="form-row {!isVanity ? 'opacity-40' : ''}">
 		<label class="form-label"><span>MAX TIME</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">min</span></label>
 		<input
 			type="number"
@@ -204,7 +204,7 @@
 		<button onclick={() => s.maxTime = 10} disabled={s.running || !isVanity} class="form-action">DEFAULT</button>
 	</div>
 
-	<div class="form-row">
+	<div class="form-row {!isVanity ? 'opacity-40' : ''}">
 		<label class="form-label">THREADS</label>
 		<input
 			type="number"
