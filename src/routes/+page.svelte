@@ -11,18 +11,72 @@
 	import XLogo from '$lib/components/icons/XLogo.svelte';
 	import TelegramLogo from '$lib/components/icons/TelegramLogo.svelte';
 	import DiscordLogo from '$lib/components/icons/DiscordLogo.svelte';
+	import { downloadJson } from '$lib/download';
 	import { onDestroy } from 'svelte';
 	import {
 		s, defaultThreads, getIsVanity,
 		getTries, formatTime, clearMatchColors,
-		generate, stop, cleanup
+		generate, stop, cleanup, sanitizeBase58,
+		getDifficulty, formatDifficulty, getEta
 	} from './keypair-state.svelte';
 
 	onDestroy(cleanup);
 
+	// --- Copy feedback ---
+	let copiedKey: string | null = $state(null);
+	let copiedTimeout: ReturnType<typeof setTimeout> | null = null;
+
+	function copyWithFeedback(value: string, key: string) {
+		navigator.clipboard.writeText(value);
+		copiedKey = key;
+		if (copiedTimeout) clearTimeout(copiedTimeout);
+		copiedTimeout = setTimeout(() => { copiedKey = null; }, 1500);
+	}
+
+	// --- Input sanitization ---
+	function handlePrefixInput(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const sanitized = sanitizeBase58(input.value);
+		if (sanitized !== input.value) input.value = sanitized;
+		s.prefix = sanitized;
+		clearMatchColors();
+	}
+
+	function handleSuffixInput(e: Event) {
+		const input = e.target as HTMLInputElement;
+		const sanitized = sanitizeBase58(input.value);
+		if (sanitized !== input.value) input.value = sanitized;
+		s.suffix = sanitized;
+		clearMatchColors();
+	}
+
+	// --- Keyboard shortcuts ---
+	function handleKeydown(e: KeyboardEvent) {
+		if (e.key === 'Enter' && !s.running) {
+			e.preventDefault();
+			generate();
+		} else if (e.key === 'Escape' && s.running) {
+			e.preventDefault();
+			stop();
+		}
+	}
+
+	// --- Export ---
+	function exportResult() {
+		if (!s.result) return;
+		downloadJson({
+			publicKey: s.result.address,
+			privateKey: s.result.privateKey,
+			mnemonic: displayMnemonic,
+			byteArray: displayArray,
+		}, `solbox-keypair-${s.result.address.slice(0, 8)}.json`);
+	}
+
 	// --- Derived ---
 	let isVanity = $derived(getIsVanity());
 	let tries = $derived(getTries());
+	let difficulty = $derived(getDifficulty());
+	let eta = $derived(getEta());
 	let displayAddress = $derived(s.result?.address ?? s.preview?.address ?? '');
 	let displayPrivateKey = $derived(s.result?.privateKey ?? s.preview?.privateKey ?? '');
 	let addrStartLen = $derived(Math.max(4, s.prefix.length + 4));
@@ -79,11 +133,13 @@
 	});
 
 	let privateKeyFormats = $derived([
-		{ label: 'b58', display: displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : '', value: displayPrivateKey },
-		{ label: 'w24', display: displayMnemonic ? '*** *** *** *** ...' : '', value: displayMnemonic },
-		{ label: 'arr', display: displayArray ? '[****,****,****,...]' : '', value: displayArray },
+		{ key: 'b58', label: 'b58', display: displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : '', value: displayPrivateKey },
+		{ key: 'w24', label: 'w24', display: displayMnemonic ? '*** *** *** *** ...' : '', value: displayMnemonic },
+		{ key: 'arr', label: 'arr', display: displayArray ? '[****,****,****,...]' : '', value: displayArray },
 	]);
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <div class="flex flex-col">
 	<div class="page-header">
@@ -110,8 +166,8 @@
 			{/if}
 			<input
 				type="text"
-				bind:value={s.prefix}
-				oninput={clearMatchColors}
+				value={s.prefix}
+				oninput={handlePrefixInput}
 				placeholder="SOL"
 				disabled={s.running}
 				autocomplete="off"
@@ -141,8 +197,8 @@
 			{/if}
 			<input
 				type="text"
-				bind:value={s.suffix}
-				oninput={clearMatchColors}
+				value={s.suffix}
+				oninput={handleSuffixInput}
 				placeholder="BOX"
 				disabled={s.running}
 				autocomplete="off"
@@ -205,7 +261,7 @@
 	</div>
 
 	<div class="form-row {!isVanity ? 'opacity-40' : ''}">
-		<label class="form-label">THREADS</label>
+		<label class="form-label"><span>THREADS</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">{defaultThreads}</span></label>
 		<input
 			type="number"
 			bind:value={s.threads}
@@ -231,19 +287,25 @@
 	<DiagonalStripesSeparator />
 
 	<div class="form-row">
-		<button onclick={generate} disabled={s.running} class="form-action-left {s.running ? '' : 'marching-border'}">GENERATE</button>
-		<span class="flex-1 px-2 py-1 relative overflow-hidden {s.status?.message || s.running || s.genPerSecHistory.length ? '' : 'opacity-40'}">
+		{#if s.running}
+			<button onclick={stop} class="form-action-left !text-error marching-border">STOP</button>
+		{:else}
+			<button onclick={generate} class="form-action-left marching-border">GENERATE</button>
+		{/if}
+		<span class="flex-1 px-2 py-1 relative overflow-hidden {s.status?.message || s.running || s.genPerSecHistory.length || (isVanity && !s.result) ? '' : 'opacity-40'}">
 			{#if s.status?.message}
 				<span class={s.status.type === 'error' ? 'text-error' : s.status.type === 'warning' ? 'text-warning' : 'text-success'}>{s.status.message}</span>
 			{:else if s.running || s.genPerSecHistory.length}
 				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{s.maxGenPerSec > s.minGenPerSec ? Math.max(0, (s.currentGenPerSec - s.minGenPerSec) / (s.maxGenPerSec - s.minGenPerSec) * 100) : 0}%"></div>
-				<span class="relative">{s.currentGenPerSec.toLocaleString()} gen/s</span>
+				<span class="relative">{s.currentGenPerSec.toLocaleString()} gen/s{#if eta} — ETA {eta}{/if}</span>
+			{:else if isVanity && !s.result}
+				<span class="opacity-50">1 in {formatDifficulty(difficulty)} attempts</span>
 			{/if}
 		</span>
 		<span class="w-22 shrink-0 border-l border-base-300 overflow-hidden flex items-end" style="height:1.75rem">
 			<PerfGraph data={s.genPerSecHistory} currentValue={s.currentGenPerSec} running={s.running} />
 		</span>
-		<button onclick={stop} disabled={!s.running} class="form-action !text-error {s.running ? 'marching-border' : ''}">STOP</button>
+		<button onclick={exportResult} disabled={!s.result} class="form-action !text-success {s.result ? 'marching-border' : ''}">EXPORT</button>
 	</div>
 
 	<DiagonalStripesSeparator />
@@ -269,14 +331,14 @@
 		>
 			{s.showMatchColors && totalTarget ? totalMatched : 0}/{totalTarget || 0}
 		</ProgressCell>
-		<button onclick={() => navigator.clipboard.writeText(displayAddress)} disabled={!s.result} class="form-action !text-success {s.result ? 'marching-border' : ''}">COPY</button>
+		<button onclick={() => copyWithFeedback(displayAddress, 'pubkey')} disabled={!s.result} class="form-action !text-success {s.result ? 'marching-border' : ''}">{copiedKey === 'pubkey' ? 'COPIED!' : 'COPY'}</button>
 	</div>
 
 	{#each privateKeyFormats as fmt}
 		<div class="form-row">
 			<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">{fmt.label}</span></label>
 			<span class="form-value {s.running && !s.result ? 'opacity-40' : ''} {!s.running && s.result ? 'bg-success/10' : !s.running && !s.result && s.status ? 'bg-error/10' : ''}">{fmt.display}</span>
-			<button onclick={() => navigator.clipboard.writeText(fmt.value)} disabled={!s.result || !fmt.value} class="form-action !text-success {s.result && fmt.value ? 'marching-border' : ''}">COPY</button>
+			<button onclick={() => copyWithFeedback(fmt.value, fmt.key)} disabled={!s.result || !fmt.value} class="form-action !text-success {s.result && fmt.value ? 'marching-border' : ''}">{copiedKey === fmt.key ? 'COPIED!' : 'COPY'}</button>
 		</div>
 	{/each}
 </div>

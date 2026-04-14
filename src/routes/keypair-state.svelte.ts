@@ -89,13 +89,38 @@ function isValidBase58(str: string): boolean {
 	return [...str].every((c) => BASE58_CHARS.includes(c));
 }
 
+export function sanitizeBase58(str: string): string {
+	return [...str].filter((c) => BASE58_CHARS.includes(c)).join('');
+}
+
 function validate(): string | null {
-	if (s.prefix && !isValidBase58(s.prefix)) return 'bad prefix charset';
-	if (s.suffix && !isValidBase58(s.suffix)) return 'bad suffix charset';
 	if (!s.maxTries || s.maxTries < 1) return 'bad max tries';
 	if (!s.maxTime || s.maxTime < 1) return 'bad max time';
 	if (s.threads < 1 || s.threads > 64) return 'bad threads';
 	return null;
+}
+
+export function getDifficulty(): number {
+	const len = (s.prefix?.length || 0) + (s.suffix?.length || 0);
+	if (len === 0) return 1;
+	return Math.pow(58, len);
+}
+
+export function formatDifficulty(n: number): string {
+	if (n >= 1e15) return `~${(n / 1e15).toFixed(1)}Q`;
+	if (n >= 1e12) return `~${(n / 1e12).toFixed(1)}T`;
+	if (n >= 1e9) return `~${(n / 1e9).toFixed(1)}B`;
+	if (n >= 1e6) return `~${(n / 1e6).toFixed(1)}M`;
+	if (n >= 1e3) return `~${(n / 1e3).toFixed(1)}K`;
+	return `~${n}`;
+}
+
+export function getEta(): string {
+	if (!s.running || s.currentGenPerSec <= 0) return '';
+	const remaining = Math.max(0, getDifficulty() - getTries());
+	const seconds = remaining / s.currentGenPerSec;
+	if (seconds < 1) return '< 1s';
+	return formatTime(seconds);
 }
 
 export function clearMatchColors() {
@@ -103,6 +128,13 @@ export function clearMatchColors() {
 	s.result = null;
 	s.preview = null;
 	s.status = null;
+	s.elapsed = 0;
+	s.workerTries = [];
+	s.genPerSecHistory = [];
+	s.currentGenPerSec = 0;
+	s.minGenPerSec = 0;
+	s.maxGenPerSec = 0;
+	s.bestScore = 0;
 }
 
 // --- Performance sampling ---
@@ -181,7 +213,8 @@ function handleWorkerMessage(workerIndex: number, data: any) {
 	if (data.type === 'found') {
 		s.workerTries[workerIndex] = data.tries;
 		s.result = data.result;
-		finish({ message: '', type: 'success' });
+		const elapsed = (Date.now() - startTime) / 1000;
+		finish({ message: `found in ${formatTime(elapsed)}`, type: 'success' });
 		return;
 	}
 
@@ -201,10 +234,13 @@ function handleWorkerMessage(workerIndex: number, data: any) {
 		finishedCount++;
 		if (finishedCount < workers.length) return;
 
-		if (getTries() >= s.maxTries || (Date.now() - startTime) / 1000 >= s.maxTime * 60) {
-			finish({ message: '', type: 'error' });
+		const elapsed = (Date.now() - startTime) / 1000;
+		if (elapsed >= s.maxTime * 60) {
+			finish({ message: 'timeout reached', type: 'error' });
+		} else if (getTries() >= s.maxTries) {
+			finish({ message: 'max tries reached', type: 'error' });
 		} else {
-			finish({ message: '', type: 'warning' });
+			finish({ message: 'stopped', type: 'warning' });
 		}
 	}
 }
