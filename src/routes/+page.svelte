@@ -8,6 +8,9 @@
 	import { getBase58Encoder } from '@solana/kit';
 	import DiagonalStripesSeparator from '$lib/components/DiagonalStripesSeparator.svelte';
 	import SolanaLogo from '$lib/components/icons/SolanaLogo.svelte';
+	import XLogo from '$lib/components/icons/XLogo.svelte';
+	import TelegramLogo from '$lib/components/icons/TelegramLogo.svelte';
+	import DiscordLogo from '$lib/components/icons/DiscordLogo.svelte';
 	import {
 		s, defaultThreads, getIsVanity,
 		getTries, formatTime, clearMatchColors,
@@ -83,6 +86,11 @@
 	<div class="page-header">
 		<h1 class="page-title"><SolanaLogo class="inline w-3 h-3 mr-2" />SOLANA KEYPAIR GENERATION</h1>
 		<MarqueeText text="Generate a Solana address that starts or ends with specific characters. Brute-forces random keypairs until a match is found. Longer patterns take exponentially more tries. Valid characters are base58: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l)." />
+		<div class="shrink-0 flex border-l border-base-300">
+			<a href="https://x.com/trixky_2" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200"><XLogo class="w-3 h-3" /></a>
+			<a href="https://t.me/trixky_fr" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200 border-l border-base-300"><TelegramLogo class="w-3 h-3" /></a>
+			<a href="https://discord.com" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200 border-l border-base-300"><DiscordLogo class="w-3 h-3" /></a>
+		</div>
 	</div>
 
 	<DiagonalStripesSeparator />
@@ -114,7 +122,7 @@
 		>
 			{s.showMatchColors && s.prefix ? prefixMatched : 0}/{s.prefix.length || 0}
 		</ProgressCell>
-		<button onclick={() => { s.prefix = ''; clearMatchColors(); }} disabled={s.running} class="form-action">CLEAN</button>
+		<button onclick={() => { s.prefix = ''; clearMatchColors(); }} disabled={s.running || !s.prefix} class="form-action">CLEAN</button>
 	</div>
 
 	<div class="form-row">
@@ -145,7 +153,7 @@
 		>
 			{s.showMatchColors && s.suffix ? suffixMatched : 0}/{s.suffix.length || 0}
 		</ProgressCell>
-		<button onclick={() => { s.suffix = ''; clearMatchColors(); }} disabled={s.running} class="form-action">CLEAN</button>
+		<button onclick={() => { s.suffix = ''; clearMatchColors(); }} disabled={s.running || !s.suffix} class="form-action">CLEAN</button>
 	</div>
 
 	<DiagonalStripesSeparator />
