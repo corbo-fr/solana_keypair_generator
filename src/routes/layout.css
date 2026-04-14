@@ -165,7 +165,7 @@ body * {
 
 /* Label cell — fixed-width left column */
 .form-label {
-  @apply flex items-center w-32 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300;
+  @apply flex items-center w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300;
 }
 
 /* Value cell — flexible middle column for text display */
@@ -185,7 +185,7 @@ body * {
 
 /* Action button — fixed-width left column (e.g. GENERATE) */
 .form-action-left {
-  @apply w-32 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none;
+  @apply w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none;
 }
 
 /* Marching stripes border — road-marking style, clockwise */

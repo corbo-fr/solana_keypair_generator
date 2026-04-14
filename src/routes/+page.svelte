@@ -145,7 +145,10 @@
 	<div class="page-header">
 		<h1 class="page-title"><SolanaLogo class="inline w-3 h-3 mr-2" />SOLANA KEYPAIR GENERATOR</h1>
 		<MarqueeText class="max-sm:hidden" text="Generate a Solana keypair with a vanity address — choose a custom prefix and/or suffix for your public key. Keypairs are generated randomly until a match is found. Longer patterns take exponentially longer. Valid characters are base58 only: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l). Everything runs locally in your browser — your private key never leaves your device." />
-		<div class="shrink-0 flex border-l border-base-300 ml-auto">
+		<span class="sm:hidden shrink-0 w-16 border-l border-base-300 overflow-hidden flex items-end ml-auto" style="height:1.75rem">
+			<PerfGraph data={s.genPerSecHistory} currentValue={s.currentGenPerSec} running={s.running} />
+		</span>
+		<div class="shrink-0 flex border-l border-base-300">
 			<a href="https://x.com/trixky_2" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200"><XLogo class="w-3 h-3" /></a>
 			<a href="https://t.me/trixky_fr" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200 border-l border-base-300"><TelegramLogo class="w-3 h-3" /></a>
 			<a href="https://discord.com" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200 border-l border-base-300"><DiscordLogo class="w-3 h-3" /></a>
@@ -234,7 +237,7 @@
 		<ProgressCell
 			pct={Math.min(100, tries / s.maxTries * 100)}
 			show={s.running || tries > 0}
-			class={!s.running && !s.result && s.status ? 'text-error' : s.running || tries > 0 ? 'opacity-70' : 'opacity-40'}
+			class="max-sm:hidden {!s.running && !s.result && s.status ? 'text-error' : s.running || tries > 0 ? 'opacity-70' : 'opacity-40'}"
 		>
 			{Math.min(100, Math.floor(tries / s.maxTries * 100))}%
 		</ProgressCell>
@@ -305,7 +308,7 @@
 				<span class="opacity-50">1 in {formatDifficulty(difficulty)} attempts</span>
 			{/if}
 		</span>
-		<span class="w-22 shrink-0 border-l border-base-300 overflow-hidden flex items-end" style="height:1.75rem">
+		<span class="max-sm:hidden w-22 shrink-0 border-l border-base-300 overflow-hidden flex items-end" style="height:1.75rem">
 			<PerfGraph data={s.genPerSecHistory} currentValue={s.currentGenPerSec} running={s.running} />
 		</span>
 		<button onclick={exportResult} disabled={!s.result} class="form-action !text-success {s.result ? 'marching-border' : ''}">EXPORT</button>
