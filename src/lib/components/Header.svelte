@@ -3,16 +3,18 @@
 	import { shortKey } from '$lib/format';
 	import {
 		canUndo, canRedo, undo, redo,
-		resetConfig, importConfig, exportConfig,
+		resetConfig, importConfig,
 		getLastAction, getWallets,
 	} from '$lib/config.svelte';
+	import { flash, clearFlash, getFlashMessage, getFlashType } from '$lib/flash.svelte';
+	import { downloadJson } from '$lib/download';
 
 	let connected = $state(false);
 	let address = $state('');
 	let fileInput: HTMLInputElement;
-	let statusMessage = $state('');
-	let statusType = $state<'error' | 'success' | ''>('');
 
+	let statusMessage = $derived(getFlashMessage());
+	let statusType = $derived(getFlashType());
 	let lastAction = $derived(getLastAction());
 	let undoEnabled = $derived(canUndo());
 	let redoEnabled = $derived(canRedo());
@@ -50,18 +52,19 @@
 	}
 
 	function handleExport() {
-		const json = exportConfig();
-		navigator.clipboard.writeText(json);
-		const count = getWallets().length;
-		flash(`Exported ${count} wallet${count !== 1 ? 's' : ''} to clipboard.`, 'success');
+		const wallets = getWallets();
+		downloadJson(wallets, `solbox-wallets-${wallets.length}.json`);
+		flash(`Exported ${wallets.length} wallet${wallets.length !== 1 ? 's' : ''}.`, 'success');
 	}
 
-	let flashTimeout: ReturnType<typeof setTimeout> | null = null;
-	function flash(msg: string, type: 'error' | 'success') {
-		statusMessage = msg;
-		statusType = type;
-		if (flashTimeout) clearTimeout(flashTimeout);
-		flashTimeout = setTimeout(() => { statusMessage = ''; statusType = ''; }, 3000);
+	function handleUndo() {
+		clearFlash();
+		undo();
+	}
+
+	function handleRedo() {
+		clearFlash();
+		redo();
 	}
 </script>
 
@@ -71,19 +74,19 @@
 	<div class="flex items-stretch justify-between">
 		<span class="flex items-center px-2 py-1 font-bold tracking-widest"><SolanaLogo class="h-4 w-4 mr-1" /> SOLBOX</span>
 		{#if connected}
-			<button onclick={toggleConnect} class="w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-success hover:bg-base-200">{shortKey(address)}</button>
+			<button onclick={toggleConnect} class="w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-success hover:bg-base-200 cursor-pointer">{shortKey(address)}</button>
 		{:else}
-			<button onclick={toggleConnect} class="w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 marching-border">CONNECT WALLET</button>
+			<button onclick={toggleConnect} class="w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 cursor-pointer marching-border">CONNECT WALLET</button>
 		{/if}
 	</div>
 	<div class="flex border-t border-base-300 bg-base-200">
 		<div class="w-44 shrink-0 flex border-r border-base-300">
-			<button onclick={undo} disabled={!undoEnabled} class="flex-1 px-2 py-1 border-r border-base-300 text-primary hover:bg-base-300 cursor-pointer disabled:opacity-40 disabled:pointer-events-none">&#9664;</button>
-			<button onclick={redo} disabled={!redoEnabled} class="flex-1 px-2 py-1 text-primary hover:bg-base-300 cursor-pointer disabled:opacity-40 disabled:pointer-events-none">&#9654;</button>
+			<button onclick={handleUndo} disabled={!undoEnabled} class="flex-1 px-2 py-1 border-r border-base-300 text-primary hover:bg-base-300 cursor-pointer disabled:opacity-40 disabled:pointer-events-none">&#9664;</button>
+			<button onclick={handleRedo} disabled={!redoEnabled} class="flex-1 px-2 py-1 text-primary hover:bg-base-300 cursor-pointer disabled:opacity-40 disabled:pointer-events-none">&#9654;</button>
 		</div>
 		<span class="flex-1 px-2 py-1 truncate opacity-50">
 			{#if statusMessage}
-				<span class={statusType === 'error' ? 'text-error' : 'text-success'}>{statusMessage}</span>
+				<span class={statusType === 'error' ? 'text-error' : statusType === 'warning' ? 'text-warning' : 'text-success'}>{statusMessage}</span>
 			{:else}
 				{lastAction}
 			{/if}

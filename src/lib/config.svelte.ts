@@ -128,6 +128,3 @@ export function importConfig(json: string): { ok: boolean; message: string } {
 	return { ok: true, message: `Imported ${wallets.length} wallet${wallets.length !== 1 ? 's' : ''}.` };
 }
 
-export function exportConfig(): string {
-	return JSON.stringify(config.wallets, null, 2);
-}

@@ -4,6 +4,7 @@ import { getBase58Encoder } from '@solana/kit';
 import { getWallets, updateConfig } from '$lib/config.svelte';
 import { shortKey } from '$lib/format';
 import { loadInputs, saveInputs } from '$lib/persist';
+import { downloadJson } from '$lib/download';
 
 // --- Constants ---
 const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -296,6 +297,6 @@ export function exportWalletJson() {
 		...(s.prefix ? { prefix: s.prefix } : {}),
 		...(s.suffix ? { suffix: s.suffix } : {}),
 	};
-	navigator.clipboard.writeText(JSON.stringify([entry], null, 2));
-	s.importStatus = { message: 'Exported to clipboard.', type: 'success' };
+	downloadJson([entry], `solbox-keypair-${shortKey(s.result!.address)}.json`);
+	s.importStatus = { message: 'Exported.', type: 'success' };
 }

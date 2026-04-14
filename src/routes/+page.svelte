@@ -2,18 +2,18 @@
 	import MarqueeText from '$lib/components/MarqueeText.svelte';
 	import DiagonalStripesSeparator from '$lib/components/DiagonalStripesSeparator.svelte';
 	import { getWallets, updateConfig, type WalletEntry } from '$lib/config.svelte';
-	import { parseWalletArray } from '$lib/schemas';
+	import { parseWalletArray, solanaPublicKeySchema, solanaPrivateKeySchema } from '$lib/schemas';
 	import { shortKey } from '$lib/format';
 	import { Keypair } from '@solana/web3.js';
 	import { getBase58Decoder } from '@solana/kit';
 	import { loadInputs, saveInputs } from '$lib/persist';
+	import { flash } from '$lib/flash.svelte';
+	import { downloadJson } from '$lib/download';
 
 	// --- State ---
 	const savedInputs = loadInputs('home', { publicKeyInput: '', privateKeyInput: '' });
 	let publicKeyInput = $state(savedInputs.publicKeyInput);
 	let privateKeyInput = $state(savedInputs.privateKeyInput);
-	type Status = { message: string; type: 'error' | 'warning' | 'success' };
-	let status = $state<Status | null>(null);
 
 	let wallets = $derived(getWallets());
 
@@ -76,32 +76,42 @@
 		const privateKey = getBase58Decoder().decode(keypair.secretKey);
 		const newWallets = [...wallets, { publicKey: address, privateKey }];
 		updateConfig(newWallets, `Generate wallet #${newWallets.length} ${shortKey(address)}`);
-		status = { message: `Wallet generated (${newWallets.length} total).`, type: 'success' };
+		flash(`Wallet generated (${newWallets.length} total).`, 'success');
 	}
 
 	function addWallet() {
 		const pub = publicKeyInput.trim();
 		const priv = privateKeyInput.trim();
-		if (!pub || !priv) {
-			status = { message: 'Both public and private key are required.', type: 'error' };
+		if (!pub && !priv) {
+			flash('Both public and private key are required.', 'error');
+			return;
+		}
+		const pubResult = solanaPublicKeySchema.safeParse(pub);
+		if (!pubResult.success) {
+			flash(pubResult.error.issues[0].message, 'error');
+			return;
+		}
+		const privResult = solanaPrivateKeySchema.safeParse(priv);
+		if (!privResult.success) {
+			flash(privResult.error.issues[0].message, 'error');
 			return;
 		}
 		if (wallets.some((w) => w.publicKey === pub)) {
-			status = { message: 'This public key already exists.', type: 'warning' };
+			flash('This public key already exists.', 'warning');
 			return;
 		}
 		const newWallets = [...wallets, { publicKey: pub, privateKey: priv }];
 		updateConfig(newWallets, `Add wallet #${newWallets.length} ${shortKey(pub)}`);
 		publicKeyInput = '';
 		privateKeyInput = '';
-		status = { message: `Wallet added (${newWallets.length} total).`, type: 'success' };
+		flash(`Wallet added (${newWallets.length} total).`, 'success');
 	}
 
 	function removeWallet(index: number) {
 		const name = walletName(wallets[index]);
 		const newWallets = wallets.filter((_, i) => i !== index);
 		updateConfig(newWallets, `Remove wallet #${index + 1} ${name} — ${newWallets.length} remaining`);
-		status = { message: `Wallet removed (${newWallets.length} total).`, type: 'success' };
+		flash(`Wallet removed (${newWallets.length} total).`, 'success');
 	}
 
 	function updateLabel(index: number, newLabel: string) {
@@ -127,7 +137,7 @@
 		reader.onload = () => {
 			const parsed = parseWalletArray(reader.result as string);
 			if (!parsed.ok) {
-				status = { message: parsed.message, type: 'error' };
+				flash(parsed.message, 'error');
 				fileInput.value = '';
 				return;
 			}
@@ -135,27 +145,27 @@
 				(w) => !wallets.some((e) => e.publicKey === w.publicKey)
 			);
 			if (valid.length === 0) {
-				status = { message: 'No new wallets to import (all duplicates).', type: 'warning' };
+				flash('No new wallets to import (all duplicates).', 'warning');
 				fileInput.value = '';
 				return;
 			}
 			const newWallets = [...wallets, ...valid];
 			updateConfig(newWallets, `Import ${valid.length} wallet${valid.length > 1 ? 's' : ''} from file — ${newWallets.length} total`);
-			status = { message: `Imported ${valid.length} wallet${valid.length > 1 ? 's' : ''} (${newWallets.length} total).`, type: 'success' };
+			flash(`Imported ${valid.length} wallet${valid.length > 1 ? 's' : ''} (${newWallets.length} total).`, 'success');
 			fileInput.value = '';
 		};
 		reader.readAsText(file);
 	}
 
-	function exportJson() {
-		const json = JSON.stringify(wallets, null, 2);
-		navigator.clipboard.writeText(json);
-		status = { message: `Exported ${wallets.length} wallet${wallets.length !== 1 ? 's' : ''} to clipboard.`, type: 'success' };
+	function exportWallet(index: number) {
+		const wallet = wallets[index];
+		downloadJson([wallet], `solbox-wallet-${shortKey(wallet.publicKey)}.json`);
+		flash(`Exported wallet #${index + 1} ${walletName(wallet)}.`, 'success');
 	}
 
 	function resetAll() {
 		updateConfig([], `Reset all — removed ${wallets.length} wallet${wallets.length !== 1 ? 's' : ''}`);
-		status = { message: 'All wallets removed.', type: 'success' };
+		flash('All wallets removed.', 'success');
 	}
 
 	// Debounce label changes to avoid spamming history
@@ -200,10 +210,13 @@
 			</label>
 			<input type="text" value={wallet.label ?? ''} oninput={(e) => onLabelInput(i, (e.target as HTMLInputElement).value)} placeholder="label" autocomplete="off" class="form-input" />
 			<div class="w-22 shrink-0 flex border-l border-base-300">
-				<button onclick={(e) => moveWallet(i, -1, e)} disabled={i === 0} class="flex-1 opacity-50 hover:bg-base-200 disabled:opacity-20 disabled:pointer-events-none">&#9650;</button>
-				<button onclick={(e) => moveWallet(i, 1, e)} disabled={i === wallets.length - 1} class="flex-1 border-l border-base-300 opacity-50 hover:bg-base-200 disabled:opacity-20 disabled:pointer-events-none">&#9660;</button>
+				<button onclick={(e) => moveWallet(i, -1, e)} disabled={i === 0} class="flex-1 opacity-50 hover:bg-base-200 cursor-pointer disabled:opacity-20 disabled:pointer-events-none">&#9650;</button>
+				<button onclick={(e) => moveWallet(i, 1, e)} disabled={i === wallets.length - 1} class="flex-1 border-l border-base-300 opacity-50 hover:bg-base-200 cursor-pointer disabled:opacity-20 disabled:pointer-events-none">&#9660;</button>
 			</div>
-			<button onclick={() => removeWallet(i)} class="form-action !text-error">DELETE</button>
+			<div class="w-40 shrink-0 flex border-l border-base-300">
+				<button onclick={() => exportWallet(i)} class="flex-1 px-2 py-1 uppercase tracking-widest text-primary hover:bg-base-200 cursor-pointer">EXPORT</button>
+				<button onclick={() => removeWallet(i)} class="flex-1 px-2 py-1 uppercase tracking-widest border-l border-base-300 !text-error hover:bg-base-200 cursor-pointer">DELETE</button>
+			</div>
 		</div>
 	{/each}
 </div>
