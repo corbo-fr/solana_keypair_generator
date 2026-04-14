@@ -7,6 +7,7 @@
 	import { wordlist } from '@scure/bip39/wordlists/english.js';
 	import { getBase58Encoder } from '@solana/kit';
 	import DiagonalStripesSeparator from '$lib/components/DiagonalStripesSeparator.svelte';
+	import SolanaLogo from '$lib/components/icons/SolanaLogo.svelte';
 	import {
 		s, defaultThreads,
 		getTries, formatTime, clearMatchColors,
@@ -79,7 +80,7 @@
 
 <div class="flex flex-col">
 	<div class="page-header">
-		<h1 class="page-title">KEYPAIR GENERATION</h1>
+		<h1 class="page-title"><SolanaLogo class="inline w-3 h-3 mr-2" />SOLANA KEYPAIR GENERATION</h1>
 		<MarqueeText text="Generate a Solana address that starts or ends with specific characters. Brute-forces random keypairs until a match is found. Longer patterns take exponentially more tries. Valid characters are base58: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l)." />
 	</div>
 
