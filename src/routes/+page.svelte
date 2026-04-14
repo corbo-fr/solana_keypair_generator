@@ -331,14 +331,14 @@
 		>
 			{s.showMatchColors && totalTarget ? totalMatched : 0}/{totalTarget || 0}
 		</ProgressCell>
-		<button onclick={() => copyWithFeedback(displayAddress, 'pubkey')} disabled={!s.result} class="form-action !text-success {s.result ? 'marching-border' : ''}">{copiedKey === 'pubkey' ? 'COPIED!' : 'COPY'}</button>
+		<button onclick={() => copyWithFeedback(displayAddress, 'pubkey')} disabled={!s.result} class="form-action !text-success {s.result ? 'marching-border' : ''}">{copiedKey === 'pubkey' ? 'COPIED' : 'COPY'}</button>
 	</div>
 
 	{#each privateKeyFormats as fmt}
 		<div class="form-row">
 			<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">{fmt.label}</span></label>
 			<span class="form-value {s.running && !s.result ? 'opacity-40' : ''} {!s.running && s.result ? 'bg-success/10' : !s.running && !s.result && s.status ? 'bg-error/10' : ''}">{fmt.display}</span>
-			<button onclick={() => copyWithFeedback(fmt.value, fmt.key)} disabled={!s.result || !fmt.value} class="form-action !text-success {s.result && fmt.value ? 'marching-border' : ''}">{copiedKey === fmt.key ? 'COPIED!' : 'COPY'}</button>
+			<button onclick={() => copyWithFeedback(fmt.value, fmt.key)} disabled={!s.result || !fmt.value} class="form-action !text-success {s.result && fmt.value ? 'marching-border' : ''}">{copiedKey === fmt.key ? 'COPIED' : 'COPY'}</button>
 		</div>
 	{/each}
 </div>
