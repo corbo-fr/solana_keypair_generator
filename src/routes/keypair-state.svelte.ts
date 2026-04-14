@@ -1,10 +1,4 @@
-import { entropyToMnemonic } from '@scure/bip39';
-import { wordlist } from '@scure/bip39/wordlists/english.js';
-import { getBase58Encoder } from '@solana/kit';
-import { getWallets, updateConfig } from '$lib/config.svelte';
-import { shortKey } from '$lib/format';
 import { loadInputs, saveInputs } from '$lib/persist';
-import { downloadJson } from '$lib/download';
 
 // --- Constants ---
 const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -49,8 +43,6 @@ export const s = $state({
 	maxGenPerSec: 0,
 	// Workers
 	workerTries: [] as number[],
-	// Import/Export
-	importStatus: null as { message: string; type: 'error' | 'success' } | null,
 });
 
 // --- Non-reactive internal state ---
@@ -231,7 +223,6 @@ export function generate() {
 	startTime = Date.now();
 	s.running = true;
 	s.showMatchColors = true;
-	s.importStatus = null;
 
 	timerInterval = setInterval(() => {
 		s.elapsed = (Date.now() - startTime) / 1000;
@@ -252,51 +243,3 @@ export function stop() {
 	stopWorkers();
 }
 
-export function importToWallets() {
-	if (!s.result) return;
-	const wallets = getWallets();
-	if (wallets.some((w) => w.publicKey === s.result!.address)) {
-		s.importStatus = { message: 'Already in wallets.', type: 'error' };
-		return;
-	}
-	let mnemonic: string | undefined;
-	let byteArray: string | undefined;
-	try {
-		const bytes = getBase58Encoder().encode(s.result!.privateKey);
-		mnemonic = entropyToMnemonic(bytes.slice(0, 32), wordlist);
-		byteArray = '[' + Array.from(bytes).join(',') + ']';
-	} catch { /* ignore */ }
-	const newWallets = [...wallets, {
-		publicKey: s.result!.address,
-		privateKey: s.result!.privateKey,
-		mnemonic,
-		byteArray,
-		prefix: s.prefix || undefined,
-		suffix: s.suffix || undefined,
-	}];
-	const pfx = s.prefix ? `prefix="${s.prefix}" ` : '';
-	const sfx = s.suffix ? `suffix="${s.suffix}" ` : '';
-	updateConfig(newWallets, `Import keypair ${pfx}${sfx}${shortKey(s.result!.address)} — ${newWallets.length} total`);
-	s.importStatus = { message: `Imported (${newWallets.length} total).`, type: 'success' };
-}
-
-export function exportWalletJson() {
-	if (!s.result) return;
-	let mnemonic: string | undefined;
-	let byteArray: string | undefined;
-	try {
-		const bytes = getBase58Encoder().encode(s.result!.privateKey);
-		mnemonic = entropyToMnemonic(bytes.slice(0, 32), wordlist);
-		byteArray = '[' + Array.from(bytes).join(',') + ']';
-	} catch { /* ignore */ }
-	const entry = {
-		publicKey: s.result!.address,
-		privateKey: s.result!.privateKey,
-		...(mnemonic ? { mnemonic } : {}),
-		...(byteArray ? { byteArray } : {}),
-		...(s.prefix ? { prefix: s.prefix } : {}),
-		...(s.suffix ? { suffix: s.suffix } : {}),
-	};
-	downloadJson([entry], `solbox-keypair-${shortKey(s.result!.address)}.json`);
-	s.importStatus = { message: 'Exported.', type: 'success' };
-}
