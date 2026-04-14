@@ -1,4 +1,6 @@
 import { loadInputs, saveInputs } from '$lib/persist';
+import { Keypair } from '@solana/web3.js';
+import { getBase58Decoder } from '@solana/kit';
 
 // --- Constants ---
 const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
@@ -45,6 +47,11 @@ export const s = $state({
 	workerTries: [] as number[],
 });
 
+// --- Derived helpers ---
+export function getIsVanity() {
+	return !!s.prefix || !!s.suffix;
+}
+
 // --- Non-reactive internal state ---
 let perfSamples: number[] = [];
 let prevTries = 0;
@@ -83,11 +90,11 @@ function isValidBase58(str: string): boolean {
 }
 
 function validate(): string | null {
-	if (s.prefix && !isValidBase58(s.prefix)) return 'Prefix contains invalid base58 characters.';
-	if (s.suffix && !isValidBase58(s.suffix)) return 'Suffix contains invalid base58 characters.';
-	if (!s.maxTries || s.maxTries < 1) return 'Max tries must be at least 1.';
-	if (!s.maxTime || s.maxTime < 1) return 'Max time must be at least 1 minute.';
-	if (s.threads < 1 || s.threads > 64) return 'Threads must be between 1 and 64.';
+	if (s.prefix && !isValidBase58(s.prefix)) return 'bad prefix charset';
+	if (s.suffix && !isValidBase58(s.suffix)) return 'bad suffix charset';
+	if (!s.maxTries || s.maxTries < 1) return 'bad max tries';
+	if (!s.maxTime || s.maxTime < 1) return 'bad max time';
+	if (s.threads < 1 || s.threads > 64) return 'bad threads';
 	return null;
 }
 
@@ -198,6 +205,28 @@ function handleWorkerMessage(workerIndex: number, data: any) {
 
 // --- Actions ---
 export function generate() {
+	// Simple random keypair generation when no vanity prefix/suffix
+	if (!s.prefix && !s.suffix) {
+		terminateAll();
+		s.status = null;
+		s.preview = null;
+		s.bestScore = 0;
+		s.elapsed = 0;
+		s.workerTries = [];
+		s.genPerSecHistory = [];
+		s.currentGenPerSec = 0;
+		s.minGenPerSec = 0;
+		s.maxGenPerSec = 0;
+		s.showMatchColors = false;
+
+		const keypair = Keypair.generate();
+		const address = keypair.publicKey.toBase58();
+		const privateKey = getBase58Decoder().decode(keypair.secretKey);
+		s.result = { address, privateKey };
+		s.status = { message: '', type: 'success' };
+		return;
+	}
+
 	const error = validate();
 	if (error) {
 		s.status = { message: error, type: 'error' };

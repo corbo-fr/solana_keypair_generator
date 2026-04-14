@@ -9,12 +9,13 @@
 	import DiagonalStripesSeparator from '$lib/components/DiagonalStripesSeparator.svelte';
 	import SolanaLogo from '$lib/components/icons/SolanaLogo.svelte';
 	import {
-		s, defaultThreads,
+		s, defaultThreads, getIsVanity,
 		getTries, formatTime, clearMatchColors,
 		generate, stop
 	} from './keypair-state.svelte';
 
 	// --- Derived ---
+	let isVanity = $derived(getIsVanity());
 	let tries = $derived(getTries());
 	let displayAddress = $derived(s.result?.address ?? s.preview?.address ?? '');
 	let displayPrivateKey = $derived(s.result?.privateKey ?? s.preview?.privateKey ?? '');
@@ -156,7 +157,7 @@
 			bind:value={s.maxTries}
 			min={1000}
 			step={1000}
-			disabled={s.running}
+			disabled={s.running || !isVanity}
 			autocomplete="off"
 			class="form-input"
 		/>
@@ -167,7 +168,7 @@
 		>
 			{Math.min(100, Math.floor(tries / s.maxTries * 100))}%
 		</ProgressCell>
-		<button onclick={() => s.maxTries = 100_000_000} disabled={s.running} class="form-action">DEFAULT</button>
+		<button onclick={() => s.maxTries = 100_000_000} disabled={s.running || !isVanity} class="form-action">DEFAULT</button>
 	</div>
 
 	<div class="form-row">
@@ -178,7 +179,7 @@
 			min={1}
 			max={1440}
 			step={1}
-			disabled={s.running}
+			disabled={s.running || !isVanity}
 			autocomplete="off"
 			class="form-input"
 		/>
@@ -189,7 +190,7 @@
 		>
 			{formatTime(s.elapsed)}
 		</ProgressCell>
-		<button onclick={() => s.maxTime = 10} disabled={s.running} class="form-action">DEFAULT</button>
+		<button onclick={() => s.maxTime = 10} disabled={s.running || !isVanity} class="form-action">DEFAULT</button>
 	</div>
 
 	<div class="form-row">
@@ -200,7 +201,7 @@
 			min={1}
 			max={64}
 			step={1}
-			disabled={s.running}
+			disabled={s.running || !isVanity}
 			autocomplete="off"
 			class="form-input"
 		/>
@@ -213,7 +214,7 @@
 				<div class="flex-1 bg-base-200 transition-all duration-150 ease-out" style="height:50%"></div>
 			{/if}
 		</span>
-		<button onclick={() => s.threads = defaultThreads} disabled={s.running} class="form-action">AVAILABLE</button>
+		<button onclick={() => s.threads = defaultThreads} disabled={s.running || !isVanity} class="form-action">AVAILABLE</button>
 	</div>
 
 	<DiagonalStripesSeparator />
