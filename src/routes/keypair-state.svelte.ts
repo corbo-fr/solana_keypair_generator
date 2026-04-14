@@ -100,6 +100,9 @@ function validate(): string | null {
 
 export function clearMatchColors() {
 	s.showMatchColors = false;
+	s.result = null;
+	s.preview = null;
+	s.status = null;
 }
 
 // --- Performance sampling ---
