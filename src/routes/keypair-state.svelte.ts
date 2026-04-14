@@ -113,6 +113,9 @@ function samplePerf() {
 	prevTries = current;
 	perfSamples.push(diff);
 
+	if (perfSamples.length > PERF_SAMPLES_PER_WINDOW * 2) {
+		perfSamples = perfSamples.slice(-PERF_SAMPLES_PER_WINDOW);
+	}
 	const windowSamples = perfSamples.slice(-PERF_SAMPLES_PER_WINDOW);
 	const genPerSec = windowSamples.reduce((a, b) => a + b, 0) * (PERF_WINDOW_MS / PERF_STEP_MS) / windowSamples.length;
 	s.currentGenPerSec = Math.round(genPerSec);
@@ -209,6 +212,7 @@ export function generate() {
 	if (!s.prefix && !s.suffix) {
 		terminateAll();
 		s.status = null;
+		s.result = null;
 		s.preview = null;
 		s.bestScore = 0;
 		s.elapsed = 0;
@@ -218,6 +222,10 @@ export function generate() {
 		s.minGenPerSec = 0;
 		s.maxGenPerSec = 0;
 		s.showMatchColors = false;
+		done = false;
+		finishedCount = 0;
+		prevTries = 0;
+		perfSamples = [];
 
 		const keypair = Keypair.generate();
 		const address = keypair.publicKey.toBase58();
@@ -263,6 +271,12 @@ export function generate() {
 	for (let i = 0; i < s.threads; i++) {
 		const w = new Worker(new URL('./vanity-worker.ts', import.meta.url), { type: 'module' });
 		w.onmessage = (e) => handleWorkerMessage(i, e.data);
+		w.onerror = () => {
+			finishedCount++;
+			if (finishedCount >= workers.length) {
+				finish({ message: 'worker error', type: 'error' });
+			}
+		};
 		workers.push(w);
 		w.postMessage({ type: 'start', prefix: s.prefix, suffix: s.suffix });
 	}
@@ -270,5 +284,12 @@ export function generate() {
 
 export function stop() {
 	stopWorkers();
+}
+
+export function cleanup() {
+	if (s.running) {
+		terminateAll();
+		s.running = false;
+	}
 }
 

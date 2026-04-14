@@ -11,11 +11,14 @@
 	import XLogo from '$lib/components/icons/XLogo.svelte';
 	import TelegramLogo from '$lib/components/icons/TelegramLogo.svelte';
 	import DiscordLogo from '$lib/components/icons/DiscordLogo.svelte';
+	import { onDestroy } from 'svelte';
 	import {
 		s, defaultThreads, getIsVanity,
 		getTries, formatTime, clearMatchColors,
-		generate, stop
+		generate, stop, cleanup
 	} from './keypair-state.svelte';
+
+	onDestroy(cleanup);
 
 	// --- Derived ---
 	let isVanity = $derived(getIsVanity());
@@ -273,7 +276,7 @@
 		<div class="form-row">
 			<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">{fmt.label}</span></label>
 			<span class="form-value {s.running && !s.result ? 'opacity-40' : ''} {!s.running && s.result ? 'bg-success/10' : !s.running && !s.result && s.status ? 'bg-error/10' : ''}">{fmt.display}</span>
-			<button onclick={() => navigator.clipboard.writeText(fmt.value)} disabled={!s.result} class="form-action !text-success {s.result ? 'marching-border' : ''}">COPY</button>
+			<button onclick={() => navigator.clipboard.writeText(fmt.value)} disabled={!s.result || !fmt.value} class="form-action !text-success {s.result && fmt.value ? 'marching-border' : ''}">COPY</button>
 		</div>
 	{/each}
 </div>
