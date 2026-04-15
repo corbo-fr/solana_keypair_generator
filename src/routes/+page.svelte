@@ -103,7 +103,6 @@
 		let count = 0;
 		for (let i = 0; i < s.prefix.length; i++) {
 			if (displayAddress[i] === s.prefix[i]) count++;
-			else break;
 		}
 		return count;
 	});
@@ -115,7 +114,6 @@
 			const ai = displayAddress.length - 1 - i;
 			const si = s.suffix.length - 1 - i;
 			if (ai >= 0 && displayAddress[ai] === s.suffix[si]) count++;
-			else break;
 		}
 		return count;
 	});
