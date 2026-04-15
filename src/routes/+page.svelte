@@ -144,7 +144,7 @@
 <div class="flex flex-col">
 	<div class="page-header">
 		<h1 class="page-title"><SolanaLogo class="inline w-3 h-3 mr-2" />SOLANA KEYPAIR GENERATOR</h1>
-		<MarqueeText class="max-sm:hidden" text="Generate a Solana keypair with a vanity address — choose a custom prefix and/or suffix for your public key. Keypairs are generated randomly until a match is found. Longer patterns take exponentially longer. Valid characters are base58 only: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l). Everything runs locally in your browser — your private key never leaves your device." />
+		<MarqueeText class="max-sm:hidden" text="Generate a Solana keypair with a vanity address — choose a custom prefix and/or suffix for your public key. Keypairs are generated randomly until a match is found. Longer patterns take exponentially longer. Valid characters are base58 only: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l). Everything runs locally in your browser — your private key never leaves your device. Randomness is powered by crypto.getRandomValues (browser CSPRNG) — keys cannot be predicted or reproduced." />
 		<span class="sm:hidden shrink-0 w-16 border-l border-base-300 overflow-hidden flex items-end ml-auto" style="height:1.75rem">
 			<PerfGraph data={s.genPerSecHistory} currentValue={s.currentGenPerSec} running={s.running} />
 		</span>
@@ -155,7 +155,7 @@
 		</div>
 	</div>
 	<div class="sm:hidden border-b border-base-300">
-		<MarqueeText text="Generate a Solana keypair with a vanity address — choose a custom prefix and/or suffix for your public key. Keypairs are generated randomly until a match is found. Longer patterns take exponentially longer. Valid characters are base58 only: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l). Everything runs locally in your browser — your private key never leaves your device." />
+		<MarqueeText text="Generate a Solana keypair with a vanity address — choose a custom prefix and/or suffix for your public key. Keypairs are generated randomly until a match is found. Longer patterns take exponentially longer. Valid characters are base58 only: 1-9 A-H J-N P-Z a-k m-z (no 0, O, I, l). Everything runs locally in your browser — your private key never leaves your device. Randomness is powered by crypto.getRandomValues (browser CSPRNG) — keys cannot be predicted or reproduced." />
 	</div>
 
 	<DiagonalStripesSeparator />
