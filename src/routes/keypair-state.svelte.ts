@@ -247,30 +247,8 @@ function handleWorkerMessage(workerIndex: number, data: any) {
 
 // --- Actions ---
 export function generate() {
-	// Simple random keypair generation when no vanity prefix/suffix
 	if (!s.prefix && !s.suffix) {
-		terminateAll();
-		s.status = null;
-		s.result = null;
-		s.preview = null;
-		s.bestScore = 0;
-		s.elapsed = 0;
-		s.workerTries = [];
-		s.genPerSecHistory = [];
-		s.currentGenPerSec = 0;
-		s.minGenPerSec = 0;
-		s.maxGenPerSec = 0;
-		s.showMatchColors = false;
-		done = false;
-		finishedCount = 0;
-		prevTries = 0;
-		perfSamples = [];
-
-		const keypair = Keypair.generate();
-		const address = keypair.publicKey.toBase58();
-		const privateKey = getBase58Decoder().decode(keypair.secretKey);
-		s.result = { address, privateKey };
-		s.status = { message: '', type: 'success' };
+		s.status = { message: 'prefix or suffix required', type: 'error' };
 		return;
 	}
 
