@@ -237,7 +237,7 @@
 			show={s.running || tries > 0}
 			class="max-sm:hidden {!s.running && !s.result && s.status ? 'text-error' : s.running || tries > 0 ? 'opacity-70' : 'opacity-40'}"
 		>
-			{Math.min(100, Math.floor(tries / s.maxTries * 100))}%
+			{Math.min(100, tries / s.maxTries * 100).toFixed(2)}%
 		</ProgressCell>
 		<button onclick={() => s.maxTries = 100_000_000} disabled={s.running || !isVanity} class="form-action">DEFAULT</button>
 	</div>
