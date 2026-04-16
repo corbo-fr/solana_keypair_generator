@@ -76,17 +76,6 @@ body {
   line-height: 1.375rem;
 }
 
-@media (max-width: 639px) {
-  body {
-    font-size: 0.6875rem;
-    line-height: 1.125rem;
-  }
-  .page-title { min-width: 0; width: auto; border-right: none !important; }
-  .form-label { @apply w-24; }
-  .form-action { @apply w-20; }
-  .form-action-left { @apply w-24; }
-}
-
 /* Uniform font size and line height everywhere — no exceptions */
 body * {
   font-size: inherit;
@@ -150,12 +139,12 @@ body * {
 
 /* Page title — fixed-width left cell */
 .page-title {
-  @apply shrink-0 min-w-44 px-2 py-1 uppercase tracking-widest border-r border-base-300 font-bold;
+  @apply shrink-0 min-w-44 px-2 py-1 uppercase tracking-widest border-r border-base-300 font-bold whitespace-nowrap;
 }
 
 /* Page description — fills remaining space */
 .page-description {
-  @apply flex-1 min-w-0 px-2 py-1 opacity-70;
+  @apply flex-1 min-w-0 px-2 py-1 opacity-70 whitespace-nowrap;
 }
 
 /* Form row — horizontal container for label + input/value + action */
@@ -165,27 +154,27 @@ body * {
 
 /* Label cell — fixed-width left column */
 .form-label {
-  @apply flex items-center w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300;
+  @apply flex items-center w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 whitespace-nowrap;
 }
 
 /* Value cell — flexible middle column for text display */
 .form-value {
-  @apply flex-1 px-2 py-1 break-all;
+  @apply flex-1 px-2 py-1 whitespace-nowrap overflow-hidden text-ellipsis;
 }
 
 /* Input cell — flexible middle column for inputs */
 .form-input {
-  @apply flex-1 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono;
+  @apply flex-1 min-w-0 px-2 py-1 bg-transparent border-0 focus:outline-none font-mono whitespace-nowrap;
 }
 
 /* Action button — fixed-width right column */
 .form-action {
-  @apply w-28 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none;
+  @apply w-28 shrink-0 px-2 py-1 uppercase tracking-widest border-l border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap;
 }
 
 /* Action button — fixed-width left column (e.g. GENERATE) */
 .form-action-left {
-  @apply w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none;
+  @apply w-44 shrink-0 px-2 py-1 uppercase tracking-widest border-r border-base-300 text-primary hover:bg-base-200 cursor-pointer disabled:opacity-40 disabled:pointer-events-none whitespace-nowrap;
 }
 
 /* Marching stripes border — road-marking style, clockwise */
@@ -224,4 +213,16 @@ body * {
       -6px 100%,
       0 -6px;
   }
+}
+
+/* ── Mobile overrides — must come AFTER base class definitions to win on specificity ── */
+@media (max-width: 639px) {
+  body {
+    font-size: 0.6875rem;
+    line-height: 1.125rem;
+  }
+  .page-title { min-width: 0; width: auto; border-right: none !important; }
+  .form-label { @apply w-32; }
+  .form-action { @apply w-28; }
+  .form-action-left { @apply w-32; }
 }
