@@ -2,6 +2,8 @@
 
 A collection of Solana tools that run **entirely in your browser**. No backend, no server, no API — your keys never leave your machine.
 
+![SolBox vanity keypair generator demo](static/vanity-demo.gif)
+
 ## Why is this secure?
 
 Traditional vanity address generators require you to trust a server with your private keys. **SolBox takes a radically different approach:**
