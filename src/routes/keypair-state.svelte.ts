@@ -180,7 +180,7 @@ function handleWorkerMessage(workerIndex: number, data: any) {
 	if (data.type === 'progress') {
 		s.workerTries[workerIndex] = data.tries;
 
-		if (data.bestScore >= s.bestScore) {
+		if (data.bestScore > s.bestScore) {
 			s.bestScore = data.bestScore;
 			s.preview = { address: data.bestAddress, privateKey: data.bestPrivateKey };
 		}
@@ -205,7 +205,7 @@ function handleWorkerMessage(workerIndex: number, data: any) {
 
 	if (data.type === 'stopped') {
 		s.workerTries[workerIndex] = data.tries ?? s.workerTries[workerIndex];
-		if (data.preview && data.bestScore >= s.bestScore) {
+		if (data.preview && data.bestScore > s.bestScore) {
 			s.bestScore = data.bestScore;
 			s.preview = data.preview;
 		}

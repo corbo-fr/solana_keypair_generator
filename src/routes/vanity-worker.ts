@@ -51,7 +51,7 @@ self.onmessage = (e: MessageEvent) => {
 				}
 
 				const score = matchScore(address, prefix, suffix);
-				if (score >= bestScore) {
+				if (score > bestScore) {
 					bestScore = score;
 					bestAddress = address;
 					bestSecretKey = keypair.secretKey;
