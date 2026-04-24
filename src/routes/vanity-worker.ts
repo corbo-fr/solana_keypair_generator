@@ -4,24 +4,9 @@
 import { Keypair } from '@solana/web3.js';
 import { getBase58Decoder } from '@solana/kit';
 
-let stopped = false;
+import { matchScore } from '$lib/match';
 
-function matchScore(address: string, prefix: string, suffix: string): number {
-	let score = 0;
-	if (prefix) {
-		for (let i = 0; i < prefix.length; i++) {
-			if (address[i] === prefix[i]) score++;
-			else break;
-		}
-	}
-	if (suffix) {
-		for (let i = 0; i < suffix.length; i++) {
-			if (address[address.length - 1 - i] === suffix[suffix.length - 1 - i]) score++;
-			else break;
-		}
-	}
-	return score;
-}
+let stopped = false;
 
 self.onmessage = (e: MessageEvent) => {
 	if (e.data.type === 'stop') {
@@ -66,7 +51,7 @@ self.onmessage = (e: MessageEvent) => {
 				}
 
 				const score = matchScore(address, prefix, suffix);
-				if (score > bestScore) {
+				if (score >= bestScore) {
 					bestScore = score;
 					bestAddress = address;
 					bestSecretKey = keypair.secretKey;

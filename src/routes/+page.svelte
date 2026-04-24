@@ -17,7 +17,7 @@
 		s, defaultThreads, getIsVanity,
 		getTries, formatTime, clearMatchColors,
 		generate, stop, cleanup, sanitizeBase58,
-		getDifficulty, formatDifficulty, getEta
+		getStateDifficulty, formatDifficulty, getEta
 	} from './keypair-state.svelte';
 
 	onDestroy(cleanup);
@@ -75,7 +75,7 @@
 	// --- Derived ---
 	let isVanity = $derived(getIsVanity());
 	let tries = $derived(getTries());
-	let difficulty = $derived(getDifficulty());
+	let difficulty = $derived(getStateDifficulty());
 	let eta = $derived(getEta());
 	let displayAddress = $derived(s.result?.address ?? s.preview?.address ?? '');
 	let displayPrivateKey = $derived(s.result?.privateKey ?? s.preview?.privateKey ?? '');

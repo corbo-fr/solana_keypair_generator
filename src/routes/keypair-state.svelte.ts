@@ -1,9 +1,11 @@
 import { loadInputs, saveInputs } from '$lib/persist';
+import { formatTime, sanitizeBase58, getDifficulty, formatDifficulty } from '$lib/vanity';
 import { Keypair } from '@solana/web3.js';
 import { getBase58Decoder } from '@solana/kit';
 
+export { formatTime, sanitizeBase58, formatDifficulty };
+
 // --- Constants ---
-const BASE58_CHARS = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
 export const defaultThreads = typeof navigator !== 'undefined' ? navigator.hardwareConcurrency || 8 : 8;
 const PERF_WINDOW_MS = 1000;
 const PERF_STEP_MS = 100;
@@ -80,18 +82,6 @@ export function getTries() {
 	return s.workerTries.reduce((a, b) => a + b, 0);
 }
 
-export function formatTime(seconds: number): string {
-	if (seconds >= 3600) return `${Math.floor(seconds / 3600)}h ${Math.floor(seconds % 3600 / 60)}m`;
-	return `${Math.floor(seconds / 60)}m ${Math.floor(seconds % 60)}s`;
-}
-
-function isValidBase58(str: string): boolean {
-	return [...str].every((c) => BASE58_CHARS.includes(c));
-}
-
-export function sanitizeBase58(str: string): string {
-	return [...str].filter((c) => BASE58_CHARS.includes(c)).join('');
-}
 
 function validate(): string | null {
 	if (!s.maxTries || s.maxTries < 1) return 'bad max tries';
@@ -100,24 +90,13 @@ function validate(): string | null {
 	return null;
 }
 
-export function getDifficulty(): number {
-	const len = (s.prefix?.length || 0) + (s.suffix?.length || 0);
-	if (len === 0) return 1;
-	return Math.pow(58, len);
-}
-
-export function formatDifficulty(n: number): string {
-	if (n >= 1e15) return `~${(n / 1e15).toFixed(1)}Q`;
-	if (n >= 1e12) return `~${(n / 1e12).toFixed(1)}T`;
-	if (n >= 1e9) return `~${(n / 1e9).toFixed(1)}B`;
-	if (n >= 1e6) return `~${(n / 1e6).toFixed(1)}M`;
-	if (n >= 1e3) return `~${(n / 1e3).toFixed(1)}K`;
-	return `~${n}`;
+export function getStateDifficulty(): number {
+	return getDifficulty(s.prefix?.length || 0, s.suffix?.length || 0);
 }
 
 export function getEta(): string {
 	if (!s.running || s.currentGenPerSec <= 0) return '';
-	const remaining = Math.max(0, getDifficulty() - getTries());
+	const remaining = Math.max(0, getStateDifficulty() - getTries());
 	const seconds = remaining / s.currentGenPerSec;
 	if (seconds < 1) return '< 1s';
 	return formatTime(seconds);
@@ -201,7 +180,7 @@ function handleWorkerMessage(workerIndex: number, data: any) {
 	if (data.type === 'progress') {
 		s.workerTries[workerIndex] = data.tries;
 
-		if (data.bestScore > s.bestScore) {
+		if (data.bestScore >= s.bestScore) {
 			s.bestScore = data.bestScore;
 			s.preview = { address: data.bestAddress, privateKey: data.bestPrivateKey };
 		}
