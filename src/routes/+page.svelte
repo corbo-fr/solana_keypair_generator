@@ -79,8 +79,8 @@
 	let eta = $derived(getEta());
 	let displayAddress = $derived(s.result?.address ?? s.preview?.address ?? '');
 	let displayPrivateKey = $derived(s.result?.privateKey ?? s.preview?.privateKey ?? '');
-	let addrStartLen = $derived(Math.max(4, s.prefix.length + 4));
-	let addrEndLen = $derived(Math.max(4, s.suffix.length + 4));
+	let addrStartLen = $derived(Math.max(4, s.prefix.length));
+	let addrEndLen = $derived(Math.max(4, s.suffix.length));
 
 	let displayMnemonic = $derived.by(() => {
 		if (!displayPrivateKey) return '';
