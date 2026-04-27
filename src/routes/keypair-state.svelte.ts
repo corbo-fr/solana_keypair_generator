@@ -91,7 +91,7 @@ function validate(): string | null {
 }
 
 export function getStateDifficulty(): number {
-	return getDifficulty(s.prefix?.length || 0, s.suffix?.length || 0);
+	return getDifficulty(s.prefix || '', s.suffix || '');
 }
 
 export function getEta(): string {

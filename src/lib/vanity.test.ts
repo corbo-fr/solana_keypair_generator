@@ -74,22 +74,44 @@ describe('sanitizeBase58', () => {
 });
 
 describe('getDifficulty', () => {
-	it('returns 1 for zero length', () => {
-		expect(getDifficulty(0, 0)).toBe(1);
+	it('returns 1 for empty prefix and suffix', () => {
+		expect(getDifficulty('', '')).toBe(1);
 	});
 
-	it('returns 58^n for prefix only', () => {
-		expect(getDifficulty(1, 0)).toBe(58);
-		expect(getDifficulty(2, 0)).toBe(58 * 58);
-		expect(getDifficulty(3, 0)).toBe(58 * 58 * 58);
+	it('returns 58^n for suffix only (uniform distribution at any non-first position)', () => {
+		expect(getDifficulty('', 'a')).toBe(58);
+		expect(getDifficulty('', 'ab')).toBe(58 * 58);
+		expect(getDifficulty('', 'abc')).toBe(58 * 58 * 58);
 	});
 
-	it('returns 58^n for suffix only', () => {
-		expect(getDifficulty(0, 2)).toBe(58 * 58);
+	it('common first char (2-H, ~5.8%) is easier than the naive 1/58', () => {
+		const single = getDifficulty('C', '');
+		expect(single).toBeCloseTo(1 / 0.058, 5);
+		expect(single).toBeLessThan(58);
 	});
 
-	it('returns 58^(prefix+suffix) for both', () => {
-		expect(getDifficulty(2, 3)).toBe(Math.pow(58, 5));
+	it('rare first char (K-Z, a-z, ~0.1%) is harder than the naive 1/58', () => {
+		const single = getDifficulty('c', '');
+		expect(single).toBeCloseTo(1 / 0.001, 5);
+		expect(single).toBeGreaterThan(58);
+	});
+
+	it('"1" first char is rare (only via leading zero byte, ~0.39%)', () => {
+		expect(getDifficulty('1', '')).toBeCloseTo(1 / 0.0039, 5);
+	});
+
+	it('"J" first char is uncommon (~2.1%)', () => {
+		expect(getDifficulty('J', '')).toBeCloseTo(1 / 0.021, 5);
+	});
+
+	it('non-first prefix positions are uniform 1/58', () => {
+		// "Corbo" — first "C" is biased (0.058), rest is uniform
+		expect(getDifficulty('Corbo', '')).toBeCloseTo(1 / (0.058 * Math.pow(1 / 58, 4)), -3);
+	});
+
+	it('combines prefix bias with uniform suffix', () => {
+		// "Co" prefix (C biased, o uniform) + "xy" suffix (uniform)
+		expect(getDifficulty('Co', 'xy')).toBeCloseTo(1 / (0.058 * Math.pow(1 / 58, 3)), -3);
 	});
 });
 
