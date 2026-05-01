@@ -12,7 +12,7 @@
 	import TelegramLogo from '$lib/components/icons/TelegramLogo.svelte';
 	import DiscordLogo from '$lib/components/icons/DiscordLogo.svelte';
 	import { downloadJson } from '$lib/download';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import {
 		s, defaultThreads, getIsVanity,
 		getTries, formatTime, clearMatchColors,
@@ -129,6 +129,24 @@
 		if (range === 0) return s.workerTries.map(() => 100);
 		return s.workerTries.map((t) => ((t - min) / range) * 100);
 	});
+
+	// --- Entropy ticker (reseed prompt while idle) ---
+	let entropyHash = $state('');
+	let prevEntropy = '';
+
+	async function reseedEntropy(data: string) {
+		prevEntropy = data;
+		const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(data));
+		entropyHash = Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, '0')).join('');
+	}
+
+	onMount(() => {
+		reseedEntropy(`init|${performance.now()},${Date.now()},${Math.random()}`);
+	});
+
+	function handleEntropyMove(e: PointerEvent) {
+		reseedEntropy(`${prevEntropy}|${e.clientX},${e.clientY},${e.movementX ?? 0},${e.movementY ?? 0},${e.pressure ?? 0},${e.pointerType},${performance.now()},${Date.now()}`);
+	}
 
 	let privateKeyFormats = $derived([
 		{ key: 'b58', label: 'b58', display: displayPrivateKey ? '****' + '.'.repeat(Math.max(3, addrStartLen + addrEndLen - 5)) + '****' : '', value: displayPrivateKey },
@@ -338,11 +356,26 @@
 		<button onclick={() => copyWithFeedback(displayAddress, 'pubkey')} disabled={!s.result} class="form-action !text-success {s.result ? 'marching-border' : ''}">{copiedKey === 'pubkey' ? 'COPIED' : 'COPY'}</button>
 	</div>
 
-	{#each privateKeyFormats as fmt}
-		<div class="form-row">
-			<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">{fmt.label}</span></label>
-			<span class="form-value {s.running && !s.result ? 'opacity-40' : ''} {!s.running && s.result ? 'bg-success/10' : !s.running && !s.result && s.status ? 'bg-error/10' : ''}">{fmt.display}</span>
-			<button onclick={() => copyWithFeedback(fmt.value, fmt.key)} disabled={!s.result || !fmt.value} class="form-action !text-success {s.result && fmt.value ? 'marching-border' : ''}">{copiedKey === fmt.key ? 'COPIED' : 'COPY'}</button>
+	{#if !s.running && !s.result}
+		<div
+			class="form-row"
+			onpointermove={handleEntropyMove}
+			style="touch-action: none;"
+			role="presentation"
+		>
+			<div class="flex-1 px-2 py-1 text-center text-white animate-pulse uppercase tracking-widest select-none cursor-crosshair flex flex-col items-center justify-center leading-tight">
+				<span>MOVE HERE</span>
+				<span>TO RESEED RANDOMNESS</span>
+				<span>{shortKey(entropyHash, 4, 4)}</span>
+			</div>
 		</div>
-	{/each}
+	{:else}
+		{#each privateKeyFormats as fmt}
+			<div class="form-row">
+				<label class="form-label"><span>PRIVATE KEY</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">{fmt.label}</span></label>
+				<span class="form-value {s.running && !s.result ? 'opacity-40' : ''} {!s.running && s.result ? 'bg-success/10' : !s.running && !s.result && s.status ? 'bg-error/10' : ''}">{fmt.display}</span>
+				<button onclick={() => copyWithFeedback(fmt.value, fmt.key)} disabled={!s.result || !fmt.value} class="form-action !text-success {s.result && fmt.value ? 'marching-border' : ''}">{copiedKey === fmt.key ? 'COPIED' : 'COPY'}</button>
+			</div>
+		{/each}
+	{/if}
 </div>
