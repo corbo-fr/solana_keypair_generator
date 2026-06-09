@@ -164,6 +164,16 @@
 		<span class="sm:hidden shrink-0 w-16 border-l border-base-300 overflow-hidden flex items-end ml-auto" style="height:1.75rem">
 			<PerfGraph data={s.genPerSecHistory} currentValue={s.currentGenPerSec} running={s.running} />
 		</span>
+		<div class="shrink-0 flex border-l border-base-300 {s.running ? 'pointer-events-none' : ''}">
+			<button
+				onclick={() => s.useGpu = false}
+				class="flex items-center px-2 h-full uppercase tracking-widest cursor-pointer {!s.useGpu || !s.gpuAvailable ? 'text-primary bg-base-200' : 'hover:bg-base-200'}"
+			>CPU</button>
+			<button
+				onclick={() => { if (s.gpuAvailable) s.useGpu = true; }}
+				class="border-l border-base-300 flex items-center px-2 h-full uppercase tracking-widest {!s.gpuAvailable ? 'opacity-40 cursor-default pointer-events-none' : s.useGpu ? 'text-primary bg-base-200 cursor-pointer' : 'hover:bg-base-200 cursor-pointer'}"
+			>GPU</button>
+		</div>
 		<div class="shrink-0 flex border-l border-base-300">
 			<a href="https://x.com/trixky_2" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200"><XLogo class="w-3 h-3" /></a>
 			<a href="https://t.me/trixky_fr" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center w-7 h-full hover:bg-base-200 border-l border-base-300"><TelegramLogo class="w-3 h-3" /></a>
@@ -283,14 +293,14 @@
 	</div>
 
 	<div class="form-row {!isVanity ? 'opacity-40' : ''}">
-		<label class="form-label"><span>THREADS</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">{defaultThreads}</span></label>
+		<label class="form-label"><span>THREADS</span><span class="ml-auto opacity-30 font-normal normal-case tracking-normal">{s.gpuAvailable && s.useGpu ? 'gpu' : defaultThreads}</span></label>
 		<input
 			type="number"
 			bind:value={s.threads}
 			min={1}
 			max={64}
 			step={1}
-			disabled={s.running || !isVanity}
+			disabled={s.running || !isVanity || (s.gpuAvailable && s.useGpu)}
 			autocomplete="off"
 			class="form-input"
 		/>
@@ -303,7 +313,7 @@
 				<div class="flex-1 bg-base-200 transition-all duration-150 ease-out" style="height:50%"></div>
 			{/if}
 		</span>
-		<button onclick={() => s.threads = defaultThreads} disabled={s.running || !isVanity} class="form-action">AVAILABLE</button>
+		<button onclick={() => s.threads = defaultThreads} disabled={s.running || !isVanity || (s.gpuAvailable && s.useGpu)} class="form-action">AVAILABLE</button>
 	</div>
 
 	<DiagonalStripesSeparator />
@@ -319,7 +329,7 @@
 				<span class={s.status.type === 'error' ? 'text-error' : s.status.type === 'warning' ? 'text-warning' : 'text-success'}>{s.status.message}</span>
 			{:else if s.running || s.genPerSecHistory.length}
 				<div class="absolute top-0 bottom-0 left-0 bg-base-200 transition-all duration-150 ease-out" style="width:{s.maxGenPerSec > s.minGenPerSec ? Math.max(0, (s.currentGenPerSec - s.minGenPerSec) / (s.maxGenPerSec - s.minGenPerSec) * 100) : 0}%"></div>
-				<span class="relative">{s.currentGenPerSec.toLocaleString()} gen/s{#if eta} — ETA {eta}{/if}</span>
+				<span class="relative">{s.gpuAvailable && s.useGpu ? 'GPU · ' : ''}{s.currentGenPerSec.toLocaleString()} gen/s{#if eta} — ETA {eta}{/if}</span>
 			{:else if isVanity && !s.result}
 				<span class="opacity-50">1 in {formatDifficulty(difficulty)} attempts</span>
 			{/if}

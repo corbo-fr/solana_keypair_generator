@@ -1,14 +1,13 @@
-// Uses @solana/web3.js (tweetnacl) instead of @solana/kit (WebCrypto) for key generation.
-// WebCrypto's crypto.subtle shares an internal browser thread pool, so multiple workers
-// hit the same bottleneck. Tweetnacl is pure JS and truly parallelizes across workers.
-import { Keypair } from '@solana/web3.js';
 import { getBase58Decoder } from '@solana/kit';
-
-import { matchScore } from '$lib/match';
+import { detectSimd } from '$lib/ed25519/feature-detect';
+import { initCpuBackend, runBatch } from '$lib/ed25519/cpu-backend';
 
 let stopped = false;
+let wasmReady = false;
 
-self.onmessage = (e: MessageEvent) => {
+const BATCH_SIZE = 512;
+
+self.onmessage = async (e: MessageEvent) => {
 	if (e.data.type === 'stop') {
 		stopped = true;
 		return;
@@ -17,8 +16,14 @@ self.onmessage = (e: MessageEvent) => {
 	if (e.data.type === 'start') {
 		stopped = false;
 		const { prefix, suffix } = e.data as { prefix: string; suffix: string };
+
+		if (!wasmReady) {
+			const simd = await detectSimd();
+			await initCpuBackend(simd);
+			wasmReady = true;
+		}
+
 		const base58Decoder = getBase58Decoder();
-		const chunkSize = 500;
 		let tries = 0;
 		let bestScore = 0;
 		let bestAddress = '';
@@ -30,32 +35,33 @@ self.onmessage = (e: MessageEvent) => {
 				return;
 			}
 
-			for (let i = 0; i < chunkSize; i++) {
-				const keypair = Keypair.generate();
-				const address = keypair.publicKey.toBase58();
-				tries++;
+			const seeds = new Uint8Array(BATCH_SIZE * 32);
+			crypto.getRandomValues(seeds);
 
-				const matchPrefix = !prefix || address.startsWith(prefix);
-				const matchSuffix = !suffix || address.endsWith(suffix);
+			const result = runBatch(seeds, BATCH_SIZE, prefix, suffix);
+			if (!result) {
+				setTimeout(runChunk, 0);
+				return;
+			}
 
-				if (matchPrefix && matchSuffix) {
-					self.postMessage({
-						type: 'found',
-						result: {
-							address,
-							privateKey: base58Decoder.decode(keypair.secretKey)
-						},
-						tries
-					});
-					return;
-				}
+			tries += BATCH_SIZE;
 
-				const score = matchScore(address, prefix, suffix);
-				if (score >= bestScore) {
-					bestScore = score;
-					bestAddress = address;
-					bestSecretKey = keypair.secretKey;
-				}
+			if (result.hit) {
+				self.postMessage({
+					type: 'found',
+					result: {
+						address: result.hit.address,
+						privateKey: base58Decoder.decode(result.hit.secretKey)
+					},
+					tries
+				});
+				return;
+			}
+
+			if (result.bestScore >= bestScore && result.best.address) {
+				bestScore = result.bestScore;
+				bestAddress = result.best.address;
+				bestSecretKey = result.best.secretKey;
 			}
 
 			self.postMessage({

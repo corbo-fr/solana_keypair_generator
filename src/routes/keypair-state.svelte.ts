@@ -2,6 +2,7 @@ import { loadInputs, saveInputs } from '$lib/persist';
 import { formatTime, sanitizeBase58, getDifficulty, formatDifficulty } from '$lib/vanity';
 import { Keypair } from '@solana/web3.js';
 import { getBase58Decoder } from '@solana/kit';
+import { isWebGPUSupported } from 'webgpu-ed25519';
 
 export { formatTime, sanitizeBase58, formatDifficulty };
 
@@ -21,7 +22,8 @@ const savedInputs = loadInputs('keypair', {
 	suffix: '',
 	maxTries: 100_000_000,
 	maxTime: 10,
-	threads: defaultThreads
+	threads: defaultThreads,
+	useGpu: false,
 });
 
 // --- All reactive state in a single object so properties can be bound/assigned from components ---
@@ -32,6 +34,7 @@ export const s = $state({
 	maxTries: savedInputs.maxTries,
 	maxTime: savedInputs.maxTime,
 	threads: savedInputs.threads,
+	useGpu: savedInputs.useGpu,
 	// Generation state
 	running: false,
 	elapsed: 0,
@@ -47,7 +50,12 @@ export const s = $state({
 	maxGenPerSec: 0,
 	// Workers
 	workerTries: [] as number[],
+	gpuAvailable: false,
 });
+
+if (typeof navigator !== 'undefined') {
+	s.gpuAvailable = isWebGPUSupported();
+}
 
 // --- Derived helpers ---
 export function getIsVanity() {
@@ -73,6 +81,7 @@ $effect.root(() => {
 			maxTries: s.maxTries,
 			maxTime: s.maxTime,
 			threads: s.threads,
+			useGpu: s.useGpu,
 		});
 	});
 });
@@ -252,7 +261,6 @@ export function generate() {
 	s.currentGenPerSec = 0;
 	s.minGenPerSec = 0;
 	s.maxGenPerSec = 0;
-	s.workerTries = new Array(s.threads).fill(0);
 	startTime = Date.now();
 	s.running = true;
 	s.showMatchColors = true;
@@ -264,17 +272,32 @@ export function generate() {
 
 	perfInterval = setInterval(samplePerf, PERF_STEP_MS);
 
-	for (let i = 0; i < s.threads; i++) {
-		const w = new Worker(new URL('./vanity-worker.ts', import.meta.url), { type: 'module' });
-		w.onmessage = (e) => handleWorkerMessage(i, e.data);
+	if (s.gpuAvailable && s.useGpu) {
+		s.workerTries = [0];
+		const w = new Worker(new URL('./vanity-gpu-worker.ts', import.meta.url), { type: 'module' });
+		w.onmessage = (e) => handleWorkerMessage(0, e.data);
 		w.onerror = () => {
 			finishedCount++;
 			if (finishedCount >= workers.length) {
-				finish({ message: 'worker error', type: 'error' });
+				finish({ message: 'gpu worker error', type: 'error' });
 			}
 		};
 		workers.push(w);
 		w.postMessage({ type: 'start', prefix: s.prefix, suffix: s.suffix });
+	} else {
+		s.workerTries = new Array(s.threads).fill(0);
+		for (let i = 0; i < s.threads; i++) {
+			const w = new Worker(new URL('./vanity-worker.ts', import.meta.url), { type: 'module' });
+			w.onmessage = (e) => handleWorkerMessage(i, e.data);
+			w.onerror = () => {
+				finishedCount++;
+				if (finishedCount >= workers.length) {
+					finish({ message: 'worker error', type: 'error' });
+				}
+			};
+			workers.push(w);
+			w.postMessage({ type: 'start', prefix: s.prefix, suffix: s.suffix });
+		}
 	}
 }
 

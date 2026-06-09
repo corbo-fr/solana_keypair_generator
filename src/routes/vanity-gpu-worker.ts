@@ -1,5 +1,6 @@
 import { Ed25519GPU } from 'webgpu-ed25519';
 import { findVanity } from 'webgpu-ed25519/vanity';
+import { getBase58Decoder } from '@solana/kit';
 
 let gpu: Ed25519GPU | null = null;
 let controller: AbortController | null = null;
@@ -30,13 +31,16 @@ self.onmessage = async (e: MessageEvent) => {
 			}
 		}
 
+		const base58Decoder = getBase58Decoder();
 		let tries = 0;
 		let found = false;
+		const startTime = performance.now();
 
 		try {
 			const gen = findVanity(gpu, {
 				prefix,
 				suffix,
+				batchSize: 65536,
 				signal: controller.signal,
 				onProgress: (keysChecked) => {
 					tries = keysChecked;
@@ -56,9 +60,11 @@ self.onmessage = async (e: MessageEvent) => {
 				const secretKey = new Uint8Array(64);
 				secretKey.set(hit.seed, 0);
 				secretKey.set(hit.publicKey, 32);
+				const elapsed = (performance.now() - startTime) / 1000;
+			console.log(`[vanity] found — tries: ${tries}, elapsed: ${elapsed.toFixed(1)}s, rate: ${Math.round(tries / elapsed)}/s`);
 				self.postMessage({
 					type: 'found',
-					result: { address: hit.address, privateKey: secretKey },
+					result: { address: hit.address, privateKey: base58Decoder.decode(secretKey) },
 					tries
 				});
 				controller.abort();
@@ -70,6 +76,8 @@ self.onmessage = async (e: MessageEvent) => {
 		}
 
 		if (!found) {
+			const elapsed = (performance.now() - startTime) / 1000;
+			console.log(`[vanity] stopped — tries: ${tries}, elapsed: ${elapsed.toFixed(1)}s, rate: ${Math.round(tries / elapsed)}/s`);
 			self.postMessage({ type: 'stopped', tries, bestScore: 0, preview: null });
 		}
 	}

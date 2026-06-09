@@ -35,7 +35,7 @@
 		"@solana/web3.js": "^1.98.4",
 		"daisyui": "^5.5.19",
 		"wasm-feature-detect": "^1.8.0",
-		"webgpu-ed25519": "file:../webgpu-ed25519",
+		"webgpu-ed25519": "link:../webgpu-ed25519",
 		"zod": "^4.3.6"
 	},
 	"pnpm": {
