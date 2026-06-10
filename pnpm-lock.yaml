@@ -24,8 +24,8 @@ importers:
         specifier: ^1.8.0
         version: 1.8.0
       webgpu-ed25519:
-        specifier: file:../webgpu-ed25519
-        version: file:../webgpu-ed25519
+        specifier: link:../webgpu-ed25519
+        version: link:../webgpu-ed25519
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -1803,9 +1803,6 @@ packages:
   wasm-feature-detect@1.8.0:
     resolution: {integrity: sha512-zksaLKM2fVlnB5jQQDqKXXwYHLQUVH9es+5TOOHwGOVJOCeRBCiPjwSg+3tN2AdTCzjgli4jijCH290kXb/zWQ==}
 
-  webgpu-ed25519@file:../webgpu-ed25519:
-    resolution: {directory: ../webgpu-ed25519, type: directory}
-
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
 
@@ -3448,8 +3445,6 @@ snapshots:
       - msw
 
   wasm-feature-detect@1.8.0: {}
-
-  webgpu-ed25519@file:../webgpu-ed25519: {}
 
   webidl-conversions@3.0.1: {}
 
