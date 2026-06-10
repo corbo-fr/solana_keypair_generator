@@ -167,11 +167,11 @@
 		<div class="shrink-0 flex border-l border-base-300 {s.running ? 'pointer-events-none' : ''}">
 			<button
 				onclick={() => s.useGpu = false}
-				class="flex items-center px-2 h-full uppercase tracking-widest cursor-pointer {!s.useGpu || !s.gpuAvailable ? 'text-primary bg-base-200' : 'hover:bg-base-200'}"
+				class="flex items-center px-2 h-full uppercase tracking-widest cursor-pointer {!s.useGpu || !s.gpuAvailable ? 'text-primary' : 'hover:bg-base-200'}"
 			>CPU</button>
 			<button
 				onclick={() => { if (s.gpuAvailable) s.useGpu = true; }}
-				class="border-l border-base-300 flex items-center px-2 h-full uppercase tracking-widest {!s.gpuAvailable ? 'opacity-40 cursor-default pointer-events-none' : s.useGpu ? 'text-primary bg-base-200 cursor-pointer' : 'hover:bg-base-200 cursor-pointer'}"
+				class="border-l border-base-300 flex items-center px-2 h-full uppercase tracking-widest {!s.gpuAvailable ? 'opacity-40 cursor-default pointer-events-none' : s.useGpu ? 'text-primary cursor-pointer' : 'hover:bg-base-200 cursor-pointer'}"
 			>GPU</button>
 		</div>
 		<div class="shrink-0 flex border-l border-base-300">
