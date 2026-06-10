@@ -12,7 +12,10 @@ if (fs.existsSync(distDir)) process.exit(0);
 
 if (!fs.existsSync(gpuDir)) {
   console.log('[setup-deps] Cloning webgpu-ed25519...');
-  execSync('git clone --depth 1 https://github.com/trixky/webgpu-ed25519.git "' + gpuDir + '"', { stdio: 'inherit' });
+  execSync('git clone --depth 1 https://github.com/trixky/webgpu-ed25519.git "' + gpuDir + '"', {
+    stdio: 'inherit',
+    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+  });
 }
 
 console.log('[setup-deps] Building webgpu-ed25519...');
